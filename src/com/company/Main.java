@@ -8,6 +8,10 @@ import java.util.Map;
 
 public class Main {
 
+    /**
+     * The Main method. Arguments should be threshold, hashAreaSize, hashFunctionCount.
+     * @param args argument vector containing threshold, hashAreaSize, hashFunctionCount.
+     */
     public static void main(String[] args) {
         double threshold = Double.parseDouble(args[0]);
         int hashAreaSize = Integer.parseInt(args[1]);

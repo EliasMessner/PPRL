@@ -3,6 +3,9 @@ package com.company;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Class representing a person, with the attributes as in the dataset.
+ */
 public class Person {
 
     public static final String[] attributeNames = {"sourceID", "globalID", "localID", "firstName", "middleName",
@@ -25,10 +28,20 @@ public class Person {
         this.attributeValues = attributes;
     }
 
+    /**
+     * Returns a string of non identifying attributes concatenated. Non identifying are all but sourceID, globalID,
+     * localID. This string can later be used to generate a bloom filter.
+     * @return A string of non identifying attributes concatenated.
+     */
     public String concatenateNonIdentifyingAttributes() {
         return String.join("", Arrays.copyOfRange(attributeValues, 3, 13));
     }
 
+    /**
+     * Returns the value of the attribute specified by its column name.
+     * @param key the column name
+     * @return the attribute value as string.
+     */
     public String getAttributeValue(String key) {
         int index = 0;
         while (index <= 13) {
