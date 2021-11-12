@@ -1,5 +1,3 @@
-package com.company;
-
 import java.util.Map;
 
 /**
@@ -18,7 +16,7 @@ public class PrecisionRecallStats {
      */
     public <K> PrecisionRecallStats(Map<K, Boolean> trueMatches, Map<K, Boolean> predictedMatches) {
         assert trueMatches.size() == predictedMatches.size();
-        trueMatches.keySet().parallelStream().forEach(key -> {
+        trueMatches.keySet().forEach(key -> {
             if (trueMatches.get(key) && predictedMatches.get(key))
                 tp++;
             else if (trueMatches.get(key) && !predictedMatches.get(key))

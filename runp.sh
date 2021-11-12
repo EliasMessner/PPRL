@@ -1,0 +1,1 @@
+java -cp classes Main 0.7 1000 10 100 p

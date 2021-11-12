@@ -1,5 +1,3 @@
-package com.company;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
