@@ -5,27 +5,50 @@ import java.util.Map;
  */
 public class PrecisionRecallStats {
 
-    public int tp = 0, tn = 0, fp = 0, fn = 0;
+    public int tp, tn, fp, fn;
 
-    /**
-     * When an instance is created, the tp, tn, fp, fn are counted.
-     * @param trueMatches a map containing the dataset identifiers as keys and truth as values.
-     * @param predictedMatches a map containing the same dataset identifiers as trueMatches as keys, and predictions
-     *                         as values.
-     * @param <K>
-     */
-    public <K> PrecisionRecallStats(Map<K, Boolean> trueMatches, Map<K, Boolean> predictedMatches) {
-        assert trueMatches.size() == predictedMatches.size();
-        trueMatches.keySet().forEach(key -> {
-            if (trueMatches.get(key) && predictedMatches.get(key))
-                tp++;
-            else if (trueMatches.get(key) && !predictedMatches.get(key))
-                fn++;
-            else if (!trueMatches.get(key) && predictedMatches.get(key))
-                fp++;
-            else if (!trueMatches.get(key) && !predictedMatches.get(key))
-                tn++;
-        });
+//    /**
+//     * When an instance is created, the tp, tn, fp, fn are counted.
+//     * @param trueMatches a map containing the dataset identifiers as keys and truth as values.
+//     * @param predictedMatches a map containing the same dataset identifiers as trueMatches as keys, and predictions
+//     *                         as values.
+//     * @param <K>
+//     */
+//    public <K> PrecisionRecallStats(Map<K, Boolean> trueMatches, Map<K, Boolean> predictedMatches) {
+//        assert trueMatches.size() == predictedMatches.size();
+//        trueMatches.keySet().forEach(key -> {
+//            if (trueMatches.get(key) && predictedMatches.get(key))
+//                tp++;
+//            else if (trueMatches.get(key) && !predictedMatches.get(key))
+//                fn++;
+//            else if (!trueMatches.get(key) && predictedMatches.get(key))
+//                fp++;
+//            else if (!trueMatches.get(key) && !predictedMatches.get(key))
+//                tn++;
+//        });
+//    }
+
+    public PrecisionRecallStats() {
+        reset();
+    }
+
+    public void evaluate(Boolean truth, Boolean prediction) {
+        if (truth && prediction)
+            tp++;
+        else if (!truth && !prediction) {
+            tn++;
+        } else if (truth) {
+            fn++;
+        } else {
+            fp++;
+        }
+    }
+
+    public void reset() {
+        tp = 0;
+        tn = 0;
+        fp = 0;
+        fn = 0;
     }
 
     public double getPrecision() {

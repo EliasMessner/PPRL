@@ -42,4 +42,9 @@ public class ProgressHandler {
         deleteLastMsg();
         System.out.println("Done.");
     }
+
+    public void abort() {
+        deleteLastMsg();
+        System.out.println("Aborted");
+    }
 }
