@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,23 +33,41 @@ public class Main {
             B = Arrays.copyOfRange(B, 0, subsetSize);
         }
 
-        // iterate the data set either parallel or serial
-        ProgressHandler progressHandler = new ProgressHandler(A.length * B.length, 1);
-        PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
+        // create all the bloom filters
+        ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
+        System.out.println("Creating Bloom Filters...");
 
+        Map<Person, BloomFilter> personBloomFilterMap = new HashMap<>();
+        if (parallel) {
+            Arrays.stream(dataSet).parallel().forEach(person -> {
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap);
+                progressHandler.updateProgress();
+            });
+        } else {
+            for (Person person : dataSet) {
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap);
+                progressHandler.updateProgress();
+            }
+        }
+        progressHandler.finish();
+
+        // iterate the data set either parallel or serial
+        PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
+        progressHandler.reset();
+        progressHandler.setTotalSize(A.length * B.length);
         System.out.println("Iterating Data Set...");
         if (parallel) {
             Person[] finalB = B;
             Arrays.stream(A).parallel().forEach(a -> {
                 Arrays.stream(finalB).parallel().forEach(b-> {
-                    DataHandler.handleDataPoints(a, b, hashAreaSize, hashFunctionCount, threshold, precisionRecallStats);
+                    DataHandler.evaluatePersonPair(a, b, personBloomFilterMap, threshold, precisionRecallStats);
                     progressHandler.updateProgress();
                 });
             });
         } else {
             for (Person a : A) {
                 for (Person b : B) {
-                    DataHandler.handleDataPoints(a, b, hashAreaSize, hashFunctionCount, threshold, precisionRecallStats);
+                    DataHandler.evaluatePersonPair(a, b, personBloomFilterMap, threshold, precisionRecallStats);
                     progressHandler.updateProgress();
                 }
             }

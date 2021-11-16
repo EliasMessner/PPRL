@@ -58,22 +58,25 @@ public class DataHandler {
      * threshold.
      * @param a data point a.
      * @param b data point b.
-     * @param hashAreaSize size of the hash area of the bloom filter.
-     * @param hashFunctionCount the number of hash functions to be simulated using double-hashing.
+     * @param personBloomFilterMap Map containing the data points a and b as keys and readily created BloomFilters as values.
      * @param threshold the threshold to decide by.
      * @param precisionRecallStats instance to make evaluation on.
      */
-    public static void handleDataPoints(Person a, Person b, int hashAreaSize, int hashFunctionCount, double threshold,
-                                         PrecisionRecallStats precisionRecallStats) {
-        Person[] key = new Person[]{a, b};
-        BloomFilter bfa = new BloomFilter(hashAreaSize, hashFunctionCount);
-        BloomFilter bfb = new BloomFilter(hashAreaSize, hashFunctionCount);
+    public static void evaluatePersonPair(Person a, Person b, Map<Person, BloomFilter> personBloomFilterMap, double threshold,
+                                          PrecisionRecallStats precisionRecallStats) {
+        BloomFilter bfa = personBloomFilterMap.get(a);
+        BloomFilter bfb = personBloomFilterMap.get(b);
+        precisionRecallStats.evaluate(Objects.equals(a, b), bfa.computeJaccardSimilarity(bfb) >= threshold);
+    }
+
+    public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>
+            personBloomFilterMap) {
+        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount);
         try {
-            bfa.store(a.concatenateNonIdentifyingAttributes());
-            bfb.store(b.concatenateNonIdentifyingAttributes());
+            bf.store(person.concatenateNonIdentifyingAttributes());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        precisionRecallStats.evaluate(Objects.equals(a, b), bfa.computeJaccardSimilarity(bfb) >= threshold);
+        personBloomFilterMap.put(person, bf);
     }
 }

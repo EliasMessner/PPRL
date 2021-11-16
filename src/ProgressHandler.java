@@ -6,7 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProgressHandler {
 
     AtomicInteger progressAbsolute;
-    final int totalSize, stepPercent;
+    int totalSize;
+    int stepPercent;
     int progressPercent;
     int lastMsgSize = 0;
 
@@ -46,5 +47,14 @@ public class ProgressHandler {
     public void abort() {
         deleteLastMsg();
         System.out.println("Aborted");
+    }
+
+    public void reset() {
+        this.progressAbsolute = new AtomicInteger();
+        this.progressPercent = 0;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
     }
 }
