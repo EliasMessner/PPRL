@@ -1,12 +1,11 @@
-import java.math.BigInteger;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Class for evaluating precision and recall by given predictions and true values assigned
+ * Threadsafe class for evaluating precision and recall by given predictions and true values assigned
  */
 public class PrecisionRecallStats {
 
-    public BigInteger tp, tn, fp, fn;
+    public AtomicLong tp, tn, fp, fn;
 
     public PrecisionRecallStats() {
         reset();
@@ -14,29 +13,31 @@ public class PrecisionRecallStats {
 
     public void evaluate(Boolean truth, Boolean prediction) {
         if (truth && prediction)
-            tp = tp.add(BigInteger.ONE);
+            tp.incrementAndGet();
         else if (!truth && !prediction) {
-            tn = tn.add(BigInteger.ONE);
+            tn.incrementAndGet();
         } else if (truth) {
-            fn = fn.add(BigInteger.ONE);
+            fn.incrementAndGet();
         } else {
-            fp = fp.add(BigInteger.ONE);
+            fp.incrementAndGet();
         }
     }
 
     public void reset() {
-        tp = BigInteger.ZERO;
-        tn = BigInteger.ZERO;
-        fp = BigInteger.ZERO;
-        fn = BigInteger.ZERO;
+        tp.set(0);
+        tn.set(0);
+        fp.set(0);
+        fn.set(0);
     }
 
     public double getPrecision() {
-        return tp.divide(tp.add(fp)).doubleValue();
+        // tp / (tp + fp)
+        return 1.0 * tp.get() / tp.get() + fp.get();
     }
 
     public double getRecall() {
-        return tp.divide(tp.add(fn)).doubleValue();
+        // tp / (tp + fn)
+        return 1.0 * tp.get() / tp.get() + fn.get();
     }
 
     @Override

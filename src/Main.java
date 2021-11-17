@@ -54,8 +54,8 @@ public class Main {
         // iterate the data set either parallel or serial
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
         progressHandler.reset();
-        progressHandler.setTotalSize(A.length * B.length);
-        System.out.println("Iterating cross product...");
+        progressHandler.setTotalSize((long) A.length * B.length);
+        System.out.println("Linking data points...");
         if (parallel) {
             Person[] finalB = B;
             Arrays.stream(A).parallel().forEach(a -> {

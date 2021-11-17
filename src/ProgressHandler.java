@@ -1,18 +1,18 @@
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Threadsafe helper class for showing progress in terminal
  */
 public class ProgressHandler {
 
-    AtomicInteger progressAbsolute;
-    int totalSize;
+    AtomicLong progressAbsolute;
+    long totalSize;
     int stepPercent;
     int progressPercent;
     int lastMsgSize = 0;
 
-    public ProgressHandler(int totalSize, int stepPercent) {
-        this.progressAbsolute = new AtomicInteger();
+    public ProgressHandler(long totalSize, int stepPercent) {
+        this.progressAbsolute = new AtomicLong();
         this.totalSize = totalSize;
         this.stepPercent = stepPercent;
         this.progressPercent = 0;
@@ -50,11 +50,11 @@ public class ProgressHandler {
     }
 
     public void reset() {
-        this.progressAbsolute = new AtomicInteger();
+        this.progressAbsolute = new AtomicLong();
         this.progressPercent = 0;
     }
 
-    public void setTotalSize(int totalSize) {
+    public void setTotalSize(long totalSize) {
         this.totalSize = totalSize;
     }
 }

@@ -53,8 +53,9 @@ public class DataHandler {
     }
 
     /**
-     * Given two data points, create a bloom filter for each one and predict whether they match according to the given
-     * threshold.
+     * Given two Persons and a personBloomFilterMap, compare the corresponding Bloom Filters using Jaccard similarity
+     * and decide by a threshold if they match. Then evaluate the true match (globalID matched) and the predicted match
+     * using the given precisionRecallStats
      * @param a data point a.
      * @param b data point b.
      * @param personBloomFilterMap Map containing the data points a and b as keys and readily created BloomFilters as values.
