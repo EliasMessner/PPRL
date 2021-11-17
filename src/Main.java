@@ -55,7 +55,7 @@ public class Main {
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
         progressHandler.reset();
         progressHandler.setTotalSize(A.length * B.length);
-        System.out.println("Iterating Data Set...");
+        System.out.println("Iterating cross product...");
         if (parallel) {
             Person[] finalB = B;
             Arrays.stream(A).parallel().forEach(a -> {

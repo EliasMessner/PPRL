@@ -3,7 +3,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Class responsible for parsing the data from csv file and splitting it by its sourceID.
@@ -66,7 +65,7 @@ public class DataHandler {
                                           PrecisionRecallStats precisionRecallStats) {
         BloomFilter bfa = personBloomFilterMap.get(a);
         BloomFilter bfb = personBloomFilterMap.get(b);
-        precisionRecallStats.evaluate(Objects.equals(a, b), bfa.computeJaccardSimilarity(bfb) >= threshold);
+        precisionRecallStats.evaluate(a.equalGlobalID(b), bfa.computeJaccardSimilarity(bfb) >= threshold);
     }
 
     public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>

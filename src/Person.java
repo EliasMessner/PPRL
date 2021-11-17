@@ -51,16 +51,20 @@ public class Person {
         throw new IllegalArgumentException("No such attribute '" + key + "'");
     }
 
+    public boolean equalGlobalID(Person other) {
+        return this.attributeValues[1].equals(other.attributeValues[1]);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Person person = (Person) o;
-        return Objects.equals(attributeValues[1], person.attributeValues[1]);
+        return Arrays.equals(attributeValues, person.attributeValues);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(attributeValues[1]);
+        return Objects.hashCode(attributeValues);
     }
 }

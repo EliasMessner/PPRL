@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.Map;
 
 /**
@@ -5,7 +6,7 @@ import java.util.Map;
  */
 public class PrecisionRecallStats {
 
-    public int tp, tn, fp, fn;
+    public BigInteger tp, tn, fp, fn;
 
     public PrecisionRecallStats() {
         reset();
@@ -13,29 +14,29 @@ public class PrecisionRecallStats {
 
     public void evaluate(Boolean truth, Boolean prediction) {
         if (truth && prediction)
-            tp++;
+            tp = tp.add(BigInteger.ONE);
         else if (!truth && !prediction) {
-            tn++;
+            tn = tn.add(BigInteger.ONE);
         } else if (truth) {
-            fn++;
+            fn = fn.add(BigInteger.ONE);
         } else {
-            fp++;
+            fp = fp.add(BigInteger.ONE);
         }
     }
 
     public void reset() {
-        tp = 0;
-        tn = 0;
-        fp = 0;
-        fn = 0;
+        tp = BigInteger.ZERO;
+        tn = BigInteger.ZERO;
+        fp = BigInteger.ZERO;
+        fn = BigInteger.ZERO;
     }
 
     public double getPrecision() {
-        return 1.0 * tp/(tp + fp);
+        return tp.divide(tp.add(fp)).doubleValue();
     }
 
     public double getRecall() {
-        return 1.0 * tp/(tp + fn);
+        return tp.divide(tp.add(fn)).doubleValue();
     }
 
     @Override
