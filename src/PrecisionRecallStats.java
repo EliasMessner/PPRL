@@ -8,7 +8,10 @@ public class PrecisionRecallStats {
     public AtomicLong tp, tn, fp, fn;
 
     public PrecisionRecallStats() {
-        reset();
+        tp = new AtomicLong();
+        tn = new AtomicLong();
+        fp = new AtomicLong();
+        fn = new AtomicLong();
     }
 
     public void evaluate(Boolean truth, Boolean prediction) {
