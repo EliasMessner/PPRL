@@ -20,7 +20,7 @@ public class Main {
         int subsetSize = Integer.parseInt(args[3]);
         boolean parallel = args[4].equals("p");
 
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
@@ -76,8 +76,8 @@ public class Main {
         progressHandler.finish();
 
         // calculate and print out the stats
-        long endTime = System.nanoTime();
-        System.out.println("Computation time: " + (endTime - startTime) / 1000000 + " ms");
+        long endTime = System.currentTimeMillis();
+        System.out.println("Computation time: " + (endTime - startTime) + " ms");
         System.out.println(precisionRecallStats);
 
     }
