@@ -35,12 +35,12 @@ public class PrecisionRecallStats {
 
     public double getPrecision() {
         // tp / (tp + fp)
-        return 1.0 * tp.get() / tp.get() + fp.get();
+        return 1.0 * tp.get() / (tp.get() + fp.get());
     }
 
     public double getRecall() {
         // tp / (tp + fn)
-        return 1.0 * tp.get() / tp.get() + fn.get();
+        return 1.0 * tp.get() / (tp.get() + fn.get());
     }
 
     @Override
