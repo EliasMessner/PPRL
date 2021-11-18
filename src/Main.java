@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ public class Main {
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         System.out.println("Creating Bloom Filters...");
 
-        Map<Person, BloomFilter> personBloomFilterMap = new HashMap<>();
+        Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
         if (parallel) {
             Arrays.stream(dataSet).parallel().forEach(person -> {
                 DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap);
