@@ -6,22 +6,25 @@ import java.util.*;
 
 /**
  * Class for hashing and storing string values into a bloom filter.
- * Uses double hashing and bigrams.
+ * Uses double hashing, enhanced double hashing, triple hashing or random hashing, depending on mode.
+ * Uses bigrams.
  */
 public class BloomFilter {
 
     boolean[] hashArea;
     int k; // # of hash functions to be simulated
+    HashingMode mode;
 
     /**
      * Constructor for BloomFilter instance. Hash area is initialized with all 0's.
      * @param hashAreaSize The length of the hash area.
      * @param hashFunctionCount The number of hash functions to be simulated through double hashing.
      */
-    public BloomFilter(int hashAreaSize, int hashFunctionCount) {
+    public BloomFilter(int hashAreaSize, int hashFunctionCount, HashingMode mode) {
         hashArea = new boolean[hashAreaSize];
         Arrays.fill(hashArea, false);
         k = hashFunctionCount;
+        this.mode = mode;
     }
 
     /**
@@ -106,17 +109,80 @@ public class BloomFilter {
     }
 
     /**
-     * Simulates k hash functions using double hashing based on SHA-1 and MD5. Then stores given bigram in bloom filter
-     * using the simulated hash functions.
+     * Simulates k hash functions using specified hashing mode based on SHA-1, MD5 and MD2. Then stores given bigram in
+     * bloom filter using the simulated hash functions.
      * @param bigram bigram to be stored
      * @throws NoSuchAlgorithmException
      */
     private void storeBigram(String bigram) throws NoSuchAlgorithmException {
-        for (int i = 0; i < k; i++){
-            int hashValue = getHash(bigram, "SHA-1").multiply(BigInteger.valueOf(i))
-                    .add(getHash(bigram, "MD5"))
-                    .mod(BigInteger.valueOf(hashArea.length)).intValue();
+        switch (mode) {
+            case DOUBLE_HASHING -> storeBigramDouble(bigram);
+            case ENHANCED_DOUBLE_HASHING -> storeBigramEnhancedDouble(bigram);
+            case TRIPLE_HASHING -> storeBigramTriple(bigram);
+            case RANDOM_HASHING -> storeBigramRandom(bigram);
+        }
+    }
+
+    private void storeBigramRandom(String bigram) {
+        long seed = bigram.charAt(0) + 257 * bigram.charAt(1);
+        Random generator = new Random(seed);
+        int hits = 0;
+        while (hits < k) {
+            int hashValue = (int) (generator.nextDouble() * hashArea.length);
+            if (hashArea[hashValue]) continue;  // collision
             hashArea[hashValue] = true;
+            hits++;
+        }
+    }
+
+    /**
+     * h_i(x) = (h1(x) + i * h2(x) + i^2 * h3(x)) mod m
+     */
+    private void storeBigramTriple(String bigram) throws NoSuchAlgorithmException {
+        BigInteger h1 = getHash(bigram, "MD5");
+        BigInteger h2 = getHash(bigram, "SHA-1");
+        BigInteger h3 = getHash(bigram, "MD2");
+        int i = 0, hits = 0;
+        while (hits < k) {
+            int o = Math.max(2*i - 1, 0); // i-th odd integer: 0, 1, 3, 5, 7, 9, ...
+            int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
+            h1 = h1.add(h2)
+                    .add(h3.multiply(BigInteger.valueOf(o)));
+            i++;
+            if (hashArea[hashValue]) continue;  // collision
+            hashArea[hashValue] = true;
+            hits++;
+        }
+    }
+
+    private void storeBigramEnhancedDouble(String bigram) throws NoSuchAlgorithmException {
+        BigInteger h1 = getHash(bigram, "MD5");
+        BigInteger h2 = getHash(bigram, "SHA-1");
+        int i = 0, hits = 0;
+        while (hits < k) {
+            int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
+            h1 = h1.add(h2);
+            h2 = h2.add(BigInteger.valueOf(i));
+            i++;
+            if (hashArea[hashValue]) continue;  // collision
+            hashArea[hashValue] = true;
+            hits++;
+        }
+    }
+
+    /**
+     * h_i(x) = (h1(x) + i * h2(x)) mod m
+     */
+    private void storeBigramDouble(String bigram) throws NoSuchAlgorithmException {
+        BigInteger h1 = getHash(bigram, "MD5");
+        BigInteger h2 = getHash(bigram, "SHA-1");
+        int hits =0;
+        while (hits < k) {
+            int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
+            h1 = h1.add(h2);
+            if (hashArea[hashValue]) continue;  // collision
+            hashArea[hashValue] = true;
+            hits++;
         }
     }
 

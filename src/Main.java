@@ -19,6 +19,12 @@ public class Main {
         int hashFunctionCount = Integer.parseInt(args[2]);
         int subsetSize = Integer.parseInt(args[3]);
         boolean parallel = args[4].equals("p");
+        HashingMode hashingMode = switch(args[5]) {
+            case "DH" -> HashingMode.DOUBLE_HASHING;
+            case "ED" -> HashingMode.ENHANCED_DOUBLE_HASHING;
+            case "TH" -> HashingMode.TRIPLE_HASHING;
+            case "RH" -> HashingMode.RANDOM_HASHING;
+        };
 
         long startTime = System.currentTimeMillis();
         // parse the data from the file
@@ -41,12 +47,12 @@ public class Main {
         Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
         if (parallel) {
             Arrays.stream(dataSet).parallel().forEach(person -> {
-                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap);
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode);
                 progressHandler.updateProgress();
             });
         } else {
             for (Person person : dataSet) {
-                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap);
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode);
                 progressHandler.updateProgress();
             }
         }

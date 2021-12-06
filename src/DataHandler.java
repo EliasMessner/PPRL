@@ -70,8 +70,8 @@ public class DataHandler {
     }
 
     public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>
-            personBloomFilterMap) {
-        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount);
+            personBloomFilterMap, HashingMode mode) {
+        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount, mode);
         try {
             bf.store(person.concatenateNonIdentifyingAttributes());
         } catch (NoSuchAlgorithmException e) {

@@ -1,0 +1,6 @@
+public enum HashingMode {
+    DOUBLE_HASHING,
+    ENHANCED_DOUBLE_HASHING,
+    TRIPLE_HASHING,
+    RANDOM_HASHING
+}
