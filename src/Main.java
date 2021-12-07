@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.sql.SQLOutput;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class Main {
             case "RH" -> HashingMode.RANDOM_HASHING;
             default -> throw new IllegalStateException("Unexpected Value for Hashing Mode.");
         };
+        System.out.println("Mode = " + hashingMode);
 
         long startTime = System.currentTimeMillis();
         // parse the data from the file

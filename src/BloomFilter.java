@@ -126,12 +126,11 @@ public class BloomFilter {
     private void storeBigramRandom(String bigram) {
         long seed = bigram.charAt(0) + 257 * bigram.charAt(1);
         Random generator = new Random(seed);
-        int hits = 0;
-        while (hits < k) {
+        int i = 0;
+        while (i < k) {
             int hashValue = (int) (generator.nextDouble() * hashArea.length);
-            if (hashArea[hashValue]) continue;  // collision
             hashArea[hashValue] = true;
-            hits++;
+            i++;
         }
     }
 
@@ -142,31 +141,27 @@ public class BloomFilter {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
         BigInteger h3 = getHash(bigram, "MD2");
-        int i = 0, hits = 0;
-        while (hits < k) {
+        int i = 0;
+        while (i < k) {
             int o = Math.max(2*i - 1, 0); // i-th odd integer: 0, 1, 3, 5, 7, 9, ...
             int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
+            hashArea[hashValue] = true;
             h1 = h1.add(h2)
                     .add(h3.multiply(BigInteger.valueOf(o)));
             i++;
-            if (hashArea[hashValue]) continue;  // collision
-            hashArea[hashValue] = true;
-            hits++;
         }
     }
 
     private void storeBigramEnhancedDouble(String bigram) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
-        int i = 0, hits = 0;
-        while (hits < k) {
+        int i = 0;
+        while (i < k) {
             int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
+            hashArea[hashValue] = true;
             h1 = h1.add(h2);
             h2 = h2.add(BigInteger.valueOf(i));
             i++;
-            if (hashArea[hashValue]) continue;  // collision
-            hashArea[hashValue] = true;
-            hits++;
         }
     }
 
@@ -176,13 +171,12 @@ public class BloomFilter {
     private void storeBigramDouble(String bigram) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
-        int hits =0;
-        while (hits < k) {
+        int i = 0;
+        while (i < k) {
             int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
-            h1 = h1.add(h2);
-            if (hashArea[hashValue]) continue;  // collision
             hashArea[hashValue] = true;
-            hits++;
+            h1 = h1.add(h2);
+            i++;
         }
     }
 
