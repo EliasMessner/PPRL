@@ -19,11 +19,12 @@ public class Main {
         int hashFunctionCount = Integer.parseInt(args[2]);
         int subsetSize = Integer.parseInt(args[3]);
         boolean parallel = args[4].equals("p");
-        HashingMode hashingMode = switch(args[5]) {
+        HashingMode hashingMode = switch (args[5]) {
             case "DH" -> HashingMode.DOUBLE_HASHING;
             case "ED" -> HashingMode.ENHANCED_DOUBLE_HASHING;
             case "TH" -> HashingMode.TRIPLE_HASHING;
             case "RH" -> HashingMode.RANDOM_HASHING;
+            default -> throw new IllegalStateException("Unexpected Value for Hashing Mode.");
         };
 
         long startTime = System.currentTimeMillis();

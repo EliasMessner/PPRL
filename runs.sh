@@ -1,1 +1,1 @@
-java -cp classes Main 0.7 1000 10 100 s DH
+java -cp classes Main 0.7 1000 10 -1 p ED
