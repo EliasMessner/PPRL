@@ -14,13 +14,13 @@ public class Person {
             "lastName", "yearOfBirth", "placeOfBirth", "country", "city", "zip", "gender", "ethnic", "race"};
     public String[] attributeValues;
     public static Map<String, Double> attributeWeights = Map.ofEntries(
-            entry("firstName", 1.0),
-            entry("middleName", 1.0),
-            entry("lastName", .6),
-            entry("yearOfBirth", 1.0),
-            entry("placeOfBirth", 1.0),
+            entry("firstName", 2.0),
+            entry("middleName", 0.5),
+            entry("lastName", 1.5),
+            entry("yearOfBirth", 2.5),
+            entry("placeOfBirth", 0.5),
+            entry("city", .5),
             entry("country", .5),
-            entry("city", .4),
             entry("zip", .3),
             entry("gender", 1.0),
             entry("ethnic", 1.0),

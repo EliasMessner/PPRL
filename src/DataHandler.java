@@ -1,3 +1,5 @@
+import org.apache.commons.codec.language.Soundex;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -78,5 +80,12 @@ public class DataHandler {
             e.printStackTrace();
         }
         personBloomFilterMap.put(person, bf);
+    }
+
+    public static String getBlockingKey(Person person) {
+        Soundex soundex = new Soundex();
+        return soundex.soundex(person.getAttributeValue("firstName"))
+                .concat(soundex.soundex(person.getAttributeValue("lastName")))
+                .concat(person.getAttributeValue("yearOfBirth"));
     }
 }
