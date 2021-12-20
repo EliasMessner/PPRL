@@ -31,6 +31,7 @@ public class Main {
                 .findFirst().orElse("").endsWith("true");  // will be false if not specified
 
         System.out.println("Mode = " + hashingMode);
+        System.out.println("Weighted Attributes = " + weightedAttributes);
 
         long startTime = System.currentTimeMillis();
         // parse the data from the file
