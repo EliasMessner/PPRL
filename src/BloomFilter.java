@@ -12,7 +12,7 @@ import java.util.*;
 public class BloomFilter {
 
     boolean[] hashArea;
-    int k; // # of hash functions to be simulated
+    int hashFunctionCount; // # of hash functions to be simulated
     HashingMode mode;
 
     /**
@@ -23,8 +23,21 @@ public class BloomFilter {
     public BloomFilter(int hashAreaSize, int hashFunctionCount, HashingMode mode) {
         hashArea = new boolean[hashAreaSize];
         Arrays.fill(hashArea, false);
-        k = hashFunctionCount;
+        this.hashFunctionCount = hashFunctionCount;
         this.mode = mode;
+    }
+
+    /**
+     * Stores each attribute, if specified with weighted attribute values.
+     * @param person Person data to be stored
+     */
+    public void storePersonData(Person person, boolean weightedAttributes) throws NoSuchAlgorithmException {
+        for (String attrName : Person.attributeWeights.keySet()) {
+            String attrVal = person.getAttributeValue(attrName);
+            double weight = Person.attributeWeights.get(attrName);
+            int k = weightedAttributes ? (int) (hashFunctionCount * weight) : hashFunctionCount;
+            store(attrVal, k);
+        }
     }
 
     /**
@@ -33,11 +46,11 @@ public class BloomFilter {
      * @param attrValue attribute value as string.
      * @throws NoSuchAlgorithmException
      */
-    public void store(String attrValue) throws NoSuchAlgorithmException {
+    public void store(String attrValue, int k) throws NoSuchAlgorithmException {
         // TODO standardize string: remove non-alphanumerics, make all uppercase
         List<String> bigrams = getBigrams(attrValue);
         for (String bigram : bigrams) {
-            storeBigram(bigram);
+            storeBigram(bigram, k);
         }
     }
 
@@ -90,10 +103,6 @@ public class BloomFilter {
         return hashArea;
     }
 
-    public int getK() {
-        return k;
-    }
-
     /**
      * Generates from a given string the bigrams and returns them.
      * @param attrValue attribute value as string.
@@ -112,18 +121,19 @@ public class BloomFilter {
      * Simulates k hash functions using specified hashing mode based on SHA-1, MD5 and MD2. Then stores given bigram in
      * bloom filter using the simulated hash functions.
      * @param bigram bigram to be stored
+     * @param k number of hash functions to be simulated
      * @throws NoSuchAlgorithmException
      */
-    private void storeBigram(String bigram) throws NoSuchAlgorithmException {
+    private void storeBigram(String bigram, int k) throws NoSuchAlgorithmException {
         switch (mode) {
-            case DOUBLE_HASHING -> storeBigramDouble(bigram);
-            case ENHANCED_DOUBLE_HASHING -> storeBigramEnhancedDouble(bigram);
-            case TRIPLE_HASHING -> storeBigramTriple(bigram);
-            case RANDOM_HASHING -> storeBigramRandom(bigram);
+            case DOUBLE_HASHING -> storeBigramDouble(bigram, k);
+            case ENHANCED_DOUBLE_HASHING -> storeBigramEnhancedDouble(bigram, k);
+            case TRIPLE_HASHING -> storeBigramTriple(bigram, k);
+            case RANDOM_HASHING -> storeBigramRandom(bigram, k);
         }
     }
 
-    private void storeBigramRandom(String bigram) {
+    private void storeBigramRandom(String bigram, int k) {
         long seed = bigram.charAt(0) + 257 * bigram.charAt(1);
         Random generator = new Random(seed);
         int i = 0;
@@ -137,7 +147,7 @@ public class BloomFilter {
     /**
      * h_i(x) = (h1(x) + i * h2(x) + i^2 * h3(x)) mod m
      */
-    private void storeBigramTriple(String bigram) throws NoSuchAlgorithmException {
+    private void storeBigramTriple(String bigram, int k) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
         BigInteger h3 = getHash(bigram, "MD2");
@@ -152,7 +162,7 @@ public class BloomFilter {
         }
     }
 
-    private void storeBigramEnhancedDouble(String bigram) throws NoSuchAlgorithmException {
+    private void storeBigramEnhancedDouble(String bigram, int k) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
         int i = 0;
@@ -168,7 +178,7 @@ public class BloomFilter {
     /**
      * h_i(x) = (h1(x) + i * h2(x)) mod m
      */
-    private void storeBigramDouble(String bigram) throws NoSuchAlgorithmException {
+    private void storeBigramDouble(String bigram, int k) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, "MD5");
         BigInteger h2 = getHash(bigram, "SHA-1");
         int i = 0;
