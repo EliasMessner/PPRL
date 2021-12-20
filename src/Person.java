@@ -1,5 +1,9 @@
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+
+import static java.util.Map.entry;
 
 /**
  * Class representing a person, with the attributes as in the dataset.
@@ -9,6 +13,20 @@ public class Person {
     public static final String[] attributeNames = {"sourceID", "globalID", "localID", "firstName", "middleName",
             "lastName", "yearOfBirth", "placeOfBirth", "country", "city", "zip", "gender", "ethnic", "race"};
     public String[] attributeValues;
+    public static Map<String, Double> attributeWeights = Map.ofEntries(
+            entry("firstName", 1.0),
+            entry("middleName", 1.0),
+            entry("lastName", .6),
+            entry("yearOfBirth", 1.0),
+            entry("placeOfBirth", 1.0),
+            entry("country", .5),
+            entry("city", .4),
+            entry("zip", .3),
+            entry("gender", 1.0),
+            entry("ethnic", 1.0),
+            entry("race", 1.0)
+    );
+
 
     public Person(String[] attributes) {
         if (attributes.length != 15) {

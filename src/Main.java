@@ -27,7 +27,11 @@ public class Main {
             case "RH" -> HashingMode.RANDOM_HASHING;
             default -> throw new IllegalStateException("Unexpected Value for Hashing Mode.");
         };
+        boolean weightedAttributes = Arrays.stream(args).filter(a -> a.startsWith("weightedAttributes=") || a.startsWith("wa="))
+                .findFirst().orElse("").endsWith("true");  // will be false if not specified
+
         System.out.println("Mode = " + hashingMode);
+        System.out.println("Weighted Attributes = " + weightedAttributes);
 
         long startTime = System.currentTimeMillis();
         // parse the data from the file
@@ -50,12 +54,12 @@ public class Main {
         Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
         if (parallel) {
             Arrays.stream(dataSet).parallel().forEach(person -> {
-                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode);
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode, weightedAttributes);
                 progressHandler.updateProgress();
             });
         } else {
             for (Person person : dataSet) {
-                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode);
+                DataHandler.createAndStoreBloomFilter(hashAreaSize, hashFunctionCount, person, personBloomFilterMap, hashingMode, weightedAttributes);
                 progressHandler.updateProgress();
             }
         }

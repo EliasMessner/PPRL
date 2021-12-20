@@ -70,10 +70,10 @@ public class DataHandler {
     }
 
     public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>
-            personBloomFilterMap, HashingMode mode) {
+            personBloomFilterMap, HashingMode mode, boolean weightedAttributes) {
         BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount, mode);
         try {
-            bf.store(person.concatenateNonIdentifyingAttributes());
+            bf.storePersonData(person, weightedAttributes);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
