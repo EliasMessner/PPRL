@@ -27,7 +27,7 @@ public class Main {
             case "RH" -> HashingMode.RANDOM_HASHING;
             default -> throw new IllegalStateException("Unexpected Value for Hashing Mode.");
         };
-        boolean weightedAttributes = Arrays.stream(args).filter(a -> a.startsWith("weightedAttributes="))
+        boolean weightedAttributes = Arrays.stream(args).filter(a -> a.startsWith("weightedAttributes=") || a.startsWith("wa="))
                 .findFirst().orElse("").endsWith("true");  // will be false if not specified
 
         System.out.println("Mode = " + hashingMode);
