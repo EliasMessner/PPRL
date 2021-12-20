@@ -1,1 +1,1 @@
-java -cp classes:lib/commons-net-3.8.0.jar Main t=0.7 n=1000 k=10 parallel=true mode=ED
+java -cp classes Main t=0.7 n=1000 k=10 parallel=true mode=ED
