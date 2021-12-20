@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,19 +40,19 @@ public class DataHandler {
      * @param dataSet the array to be split.
      * @return a 2D Person-array, the first dimension only containing two entries, each a subset of the dataset.
      */
-    public static Person[][] splitDataBySource(Person[] dataSet) {
-        Person[][] resultData = new Person[2][dataSet.length/2];
-        int a = 0, b = 0;
+    public static List<Person[]> splitDataBySource(Person[] dataSet) {
+        List<Person> a = new ArrayList<>();
+        List<Person> b = new ArrayList<>();
         for (Person p : dataSet) {
             if (p.getAttributeValue("sourceID").equals("A")) {
-                resultData[0][a] = p;
-                a++;
+                a.add(p);
             } else if (p.getAttributeValue("sourceID").equals("B")) {
-                resultData[1][b] = p;
-                b++;
+                b.add(p);
             }
         }
-        assert(a == b);
+        List<Person[]> resultData = new ArrayList<>();
+        resultData.add(a.toArray(Person[]::new));
+        resultData.add(b.toArray(Person[]::new));
         return resultData;
     }
 

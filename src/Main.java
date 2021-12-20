@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.util.*;
 
+import static java.util.Map.entry;
+
 public class Main {
 
     /**
@@ -48,12 +50,19 @@ public class Main {
         });
         progressHandler.finish();
 
-        // create blocking keys
-        System.out.println("Creating Blocking Keys...");
-        progressHandler.reset();
-        progressHandler.setTotalSize(dataSet.length);
-        Map<String, Set<Person>> blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
-        progressHandler.finish();
+        // create blocking keys if blocking is turned on
+        Map<String, Set<Person>> blockingMap;
+        if (blocking) {
+            System.out.println("Creating Blocking Keys...");
+            progressHandler.reset();
+            progressHandler.setTotalSize(dataSet.length);
+            blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
+            progressHandler.finish();
+        } else {
+            blockingMap = Map.ofEntries(
+                    entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet)))
+            );
+        }
 
         // evaluate the cartesian product of the record-set of each blocking key
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
@@ -87,9 +96,9 @@ public class Main {
     private static void evaluateCartesianProduct(Set<Person> records, ProgressHandler progressHandler,
                                                  Map<Person, BloomFilter> personBloomFilterMap, double threshold,
                                                  PrecisionRecallStats precisionRecallStats) {
-        Person[][] splitData = DataHandler.splitDataBySource(records.toArray(Person[]::new));
-        Person[] A = splitData[0];
-        Person[] B = splitData[1];
+        List<Person[]> splitData = DataHandler.splitDataBySource(records.toArray(Person[]::new));
+        Person[] A = splitData.get(0);
+        Person[] B = splitData.get(1);
         Arrays.stream(A).parallel().forEach(a -> {
             Arrays.stream(B).parallel().forEach(b-> {
                 DataHandler.evaluatePersonPair(a, b, personBloomFilterMap, threshold, precisionRecallStats);
@@ -110,7 +119,7 @@ public class Main {
             if (blockingMap.containsKey(key)) {
                 blockingMap.get(key).add(person);
             } else {
-                blockingMap.put(key, Collections.singleton(person));
+                blockingMap.put(key, new HashSet<>(){{add(person);}});
             }
             progressHandler.updateProgress();
         });
