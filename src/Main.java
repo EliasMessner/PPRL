@@ -52,20 +52,22 @@ public class Main {
 
         // create blocking keys if blocking is turned on
         Map<String, Set<Person>> blockingMap;
+        PrecisionRecallStats precisionRecallStats;
         if (blocking) {
+            precisionRecallStats = new PrecisionRecallStatsForBlocking(((long) dataSet.length * dataSet.length)/4, 20000);
             System.out.println("Creating Blocking Keys...");
             progressHandler.reset();
             progressHandler.setTotalSize(dataSet.length);
             blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
             progressHandler.finish();
         } else {
+            precisionRecallStats = new PrecisionRecallStats();
             blockingMap = Map.ofEntries(
                     entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet)))
             );
         }
 
         // evaluate the cartesian product of the record-set of each blocking key
-        PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats();
         progressHandler.reset();
         long totalSize = 0;
         for (String key : blockingMap.keySet()) {
@@ -99,12 +101,10 @@ public class Main {
         List<Person[]> splitData = DataHandler.splitDataBySource(records.toArray(Person[]::new));
         Person[] A = splitData.get(0);
         Person[] B = splitData.get(1);
-        Arrays.stream(A).parallel().forEach(a -> {
-            Arrays.stream(B).parallel().forEach(b-> {
-                DataHandler.evaluatePersonPair(a, b, personBloomFilterMap, threshold, precisionRecallStats);
-                progressHandler.updateProgress();
-            });
-        });
+        Arrays.stream(A).parallel().forEach(a -> Arrays.stream(B).parallel().forEach(b-> {
+            DataHandler.evaluatePersonPair(a, b, personBloomFilterMap, threshold, precisionRecallStats);
+            progressHandler.updateProgress();
+        }));
     }
 
     /**
