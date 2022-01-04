@@ -1,0 +1,5 @@
+mode, k, b, l, t, wa
+DH, 10, TRUE, 1000, 0.65, true
+DH, 10, TRUE, 1000, 0.65, FALSE
+DH, 10, TRUE, 1000, 0.7, false
+DH, 10, TRUE, 1000, 0.75, FALSE
