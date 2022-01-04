@@ -1,1 +1,1 @@
-java -cp classes Main t=0.7 n=1000 k=10 parallel=true mode=ED
+java -cp classes Main t=0.7 l=1000 k=10 mode=ED
