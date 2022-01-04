@@ -1,89 +1,104 @@
 import java.io.IOException;
 import java.util.*;
-
 import static java.util.Map.entry;
 
 public class Main {
 
     /**
-     * The Main method. Arguments should be threshold, hashAreaSize, hashFunctionCount, subsetSize, parallelFlag
-     * The subsetSize is the size of the subset to be evaluated, e.g. the first 500 entries of each dataset
-     * source. If set to -1, the full dataset will be evaluated.
-     * parallelFlag should be "p" or "s" to state whether the program should be executed in parallel or serial mode.
-     * @param args argument vector containing threshold, hashAreaSize, hashFunctionCount, (optional) subsetSize.
+     * The Main method. Arguments should be threshold (t), hashAreaSize (l), hashFunctionCount (k), mode,
+     * weightedAttributes (wa), blocking (b).
+     * Or a csv file with the above arguments. Each line in the csv file represents the one set of parameters and there
+     * will be one iteration of the program per line.
+     * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED, b=true, wa=true"
      */
     public static void main(String[] args) throws IOException {
-        double t = Double.parseDouble(ArgumentHelper.parseString(args, "t", null));
-        int l = Integer.parseInt(ArgumentHelper.parseString(args, "l", null));
-        int k = Integer.parseInt(ArgumentHelper.parseString(args, "k", "10"));
-        HashingMode hashingMode = switch (ArgumentHelper.parseString(args, "mode", "DH")) {
-            case "DH" -> HashingMode.DOUBLE_HASHING;
-            case "ED" -> HashingMode.ENHANCED_DOUBLE_HASHING;
-            case "TH" -> HashingMode.TRIPLE_HASHING;
-            case "RH" -> HashingMode.RANDOM_HASHING;
-            default -> throw new IllegalArgumentException("Unexpected Value for Hashing Mode.");
-        };
-        boolean weightedAttributes = ArgumentHelper.parseBoolean(args, "wa", false) ||
-                ArgumentHelper.parseBoolean(args, "weightedAttributes", false);
-        boolean blocking = ArgumentHelper.parseBoolean(args, "b", false) ||
-                ArgumentHelper.parseBoolean(args, "blocking", false);
+        if (args.length == 1) {
+            // go by csv file
+            List<Parameters> parametersList = FileHandler.parseParametersListFromFile(args[0]);
+            for(Parameters parameters : parametersList) {
+                PrecisionRecallStats results = mainLoop(parameters);
+                // TODO store results in file
+            }
+        } else {
+            // go by command line arguments
+            mainLoop(ArgumentHelper.parseParametersFromArguments(args));
+        }
+    }
 
-        System.out.println("Mode = " + hashingMode);
-        System.out.println("Weighted Attributes = " + weightedAttributes);
-        System.out.println("Blocking = " + blocking);
-        System.out.printf("t=%f, l=%d, k=%d \n", t, l, k);
-
+    public static PrecisionRecallStats mainLoop(Parameters parameters) throws IOException{
+        System.out.println("\n\n");
+        System.out.println(parameters);
         long startTime = System.currentTimeMillis();
-
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
-
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
-        System.out.println("Creating Bloom Filters...");
-        Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
-        Arrays.stream(dataSet).parallel().forEach(person -> {
-            DataHandler.createAndStoreBloomFilter(l, k, person, personBloomFilterMap,
-                    hashingMode, weightedAttributes);
-            progressHandler.updateProgress();
-        });
+        Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
         progressHandler.finish();
-
         // create blocking keys if blocking is turned on
-        Map<String, Set<Person>> blockingMap;
-        PrecisionRecallStats precisionRecallStats;
-        if (blocking) {
-            precisionRecallStats = new PrecisionRecallStatsForBlocking(((long) dataSet.length * dataSet.length)/4, 20000);
-            System.out.println("Creating Blocking Keys...");
-            progressHandler.reset();
-            progressHandler.setTotalSize(dataSet.length);
-            blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
-            progressHandler.finish();
-        } else {
-            precisionRecallStats = new PrecisionRecallStats();
-            blockingMap = Map.ofEntries(
-                    entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet)))
-            );
-        }
-
+        Map<String, Set<Person>> blockingMap = getBlockingMap(parameters, dataSet, progressHandler);
+        // create resulting stats for precision and recall etc
+        PrecisionRecallStats precisionRecallStats = getPrecisionRecallStats(parameters, dataSet);
         // evaluate the cartesian product of the record-set of each blocking key
         progressHandler.reset();
+        iterateBlockingMap(parameters, progressHandler, personBloomFilterMap, blockingMap, precisionRecallStats);
+        progressHandler.finish();
+        // calculate and print out the stats
+        long endTime = System.currentTimeMillis();
+        System.out.println("Computation time: " + (endTime - startTime) + " ms");
+        System.out.println(precisionRecallStats);
+        return precisionRecallStats;
+    }
+
+    private static void iterateBlockingMap(Parameters parameters, ProgressHandler progressHandler, Map<Person, BloomFilter> personBloomFilterMap, Map<String, Set<Person>> blockingMap, PrecisionRecallStats precisionRecallStats) {
         long totalSize = 0;
+        // determine total size for progressHandler
         for (String key : blockingMap.keySet()) {
             totalSize += (long) blockingMap.get(key).size() * blockingMap.get(key).size();
         }
         progressHandler.setTotalSize(totalSize);
         System.out.println("Linking data points...");
         blockingMap.keySet().parallelStream().forEach(blockingKey ->
-                evaluateCartesianProduct(blockingMap.get(blockingKey), progressHandler, personBloomFilterMap, t,
-                precisionRecallStats));
-        progressHandler.finish();
+                evaluateCartesianProduct(blockingMap.get(blockingKey), progressHandler, personBloomFilterMap, parameters.t(),
+                        precisionRecallStats));
+    }
 
-        // calculate and print out the stats
-        long endTime = System.currentTimeMillis();
-        System.out.println("Computation time: " + (endTime - startTime) + " ms");
-        System.out.println(precisionRecallStats);
+    private static PrecisionRecallStats getPrecisionRecallStats(Parameters parameters, Person[] dataSet) {
+        PrecisionRecallStats precisionRecallStats;
+        if (parameters.blocking()) {
+            precisionRecallStats = new PrecisionRecallStatsForBlocking(((long) dataSet.length * dataSet.length)/4, 20000);
+        } else {
+            precisionRecallStats = new PrecisionRecallStats();
+        }
+        return precisionRecallStats;
+    }
+
+    private static Map<String, Set<Person>> getBlockingMap(Parameters parameters, Person[] dataSet, ProgressHandler progressHandler) {
+        Map<String, Set<Person>> blockingMap;
+        if (parameters.blocking()) {
+            System.out.println("Creating Blocking Keys...");
+            progressHandler.reset();
+            progressHandler.setTotalSize(dataSet.length);
+            blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
+            progressHandler.finish();
+        } else {
+            blockingMap = Map.ofEntries(
+                    entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet)))
+            );
+        }
+        return blockingMap;
+    }
+
+    private static Map<Person, BloomFilter> getPersonBloomFilterMap(Parameters parameters, Person[] dataSet, ProgressHandler progressHandler) {
+        System.out.println("Creating Bloom Filters...");
+        Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
+        Arrays.stream(dataSet).parallel().forEach(person -> {
+            DataHandler.createAndStoreBloomFilter(parameters.l(), parameters.k(), person, personBloomFilterMap,
+                    parameters.mode(), parameters.weightedAttributes());
+            progressHandler.updateProgress();
+        });
+        return personBloomFilterMap;
     }
 
     /**

@@ -1,1 +1,1 @@
-javac -d classes -cp .:lib/commons-codec-1.15.jar; src/*.java
+javac -d classes -cp .:lib/commons-codec-1.15.jar src/*.java
