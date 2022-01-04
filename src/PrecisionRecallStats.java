@@ -43,6 +43,10 @@ public class PrecisionRecallStats {
         return 1.0 * tp.get() / (tp.get() + fn.get());
     }
 
+    public double getF1Score() {
+        return 2.0 * ((getPrecision() * getRecall())/(getPrecision() + getRecall()));
+    }
+
     @Override
     public String toString() {
         return "tp: " + tp + "\ntn: " + tn + "\nfp: " + fp + "\nfn: " + fn + "\nprecision: " + getPrecision()

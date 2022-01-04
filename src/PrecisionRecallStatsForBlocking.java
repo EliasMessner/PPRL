@@ -1,6 +1,7 @@
 /**
  * This class should be used instead of PrecisionRecallStats if not all Records will be evaluated, e.g. due to blocking.
  * The non-evaluated Records are automatically assumed to be classified as non-matches.
+ * The amount of true matches must be known beforehand, as opposed to the parent class PrecisionRecallStats.
  */
 public class PrecisionRecallStatsForBlocking extends PrecisionRecallStats {
 

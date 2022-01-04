@@ -9,29 +9,33 @@ public class Main {
      * weightedAttributes (wa), blocking (b).
      * Or a csv file with the above arguments. Each line in the csv file represents the one set of parameters and there
      * will be one iteration of the program per line.
-     * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED, b=true, wa=true"
+     * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED b=true wa=true"
      */
     public static void main(String[] args) throws IOException {
-        if (args.length == 1) {
-            // go by csv file
-            List<Parameters> parametersList = FileHandler.parseParametersListFromFile(args[0]);
-            for(Parameters parameters : parametersList) {
-                PrecisionRecallStats results = mainLoop(parameters);
-                // TODO store results in file
-            }
-        } else {
-            // go by command line arguments
-            mainLoop(ArgumentHelper.parseParametersFromArguments(args));
-        }
-    }
-
-    public static PrecisionRecallStats mainLoop(Parameters parameters) throws IOException{
-        System.out.println("\n\n");
-        System.out.println(parameters);
-        long startTime = System.currentTimeMillis();
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
+        if (args.length == 1) {
+            // go by csv file
+            List<Result> results = new ArrayList<>();
+            List<Parameters> parametersList = FileHandler.parseParametersListFromFile(args[0]);
+            int i = 1;
+            for(Parameters parameters : parametersList) {
+                System.out.printf("Iteration %d/%d\n", i, parametersList.size());
+                PrecisionRecallStats stats = mainLoop(parameters, dataSet);
+                results.add(new Result(parameters, stats));
+                i++;
+            }
+            FileHandler.writeResults(results, "results/results.csv");
+        } else {
+            // go by command line arguments
+            mainLoop(ArgumentHelper.parseParametersFromArguments(args), dataSet);
+        }
+    }
+
+    public static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
+        System.out.println(parameters);
+        long startTime = System.currentTimeMillis();
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
@@ -48,10 +52,13 @@ public class Main {
         long endTime = System.currentTimeMillis();
         System.out.println("Computation time: " + (endTime - startTime) + " ms");
         System.out.println(precisionRecallStats);
+        System.out.println("\n\n");
         return precisionRecallStats;
     }
 
-    private static void iterateBlockingMap(Parameters parameters, ProgressHandler progressHandler, Map<Person, BloomFilter> personBloomFilterMap, Map<String, Set<Person>> blockingMap, PrecisionRecallStats precisionRecallStats) {
+    private static void iterateBlockingMap(Parameters parameters, ProgressHandler progressHandler,
+                                           Map<Person, BloomFilter> personBloomFilterMap,
+                                           Map<String, Set<Person>> blockingMap, PrecisionRecallStats precisionRecallStats) {
         long totalSize = 0;
         // determine total size for progressHandler
         for (String key : blockingMap.keySet()) {
@@ -90,7 +97,8 @@ public class Main {
         return blockingMap;
     }
 
-    private static Map<Person, BloomFilter> getPersonBloomFilterMap(Parameters parameters, Person[] dataSet, ProgressHandler progressHandler) {
+    private static Map<Person, BloomFilter> getPersonBloomFilterMap(Parameters parameters, Person[] dataSet,
+                                                                    ProgressHandler progressHandler) {
         System.out.println("Creating Bloom Filters...");
         Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
         Arrays.stream(dataSet).parallel().forEach(person -> {
