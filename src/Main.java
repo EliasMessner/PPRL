@@ -138,12 +138,9 @@ public class Main {
     private static Map<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler) {
         Map<String, Set<Person>> blockingMap = Collections.synchronizedMap(new HashMap<>());
         Arrays.stream(dataSet).parallel().forEach(person -> {
-            String key = DataHandler.getBlockingKey(person);
-            if (blockingMap.containsKey(key)) {
-                blockingMap.get(key).add(person);
-            } else {
-                blockingMap.put(key, new HashSet<>(){{add(person);}});
-            }
+            String soundexBlockingKey = DataHandler.getSoundexBlockingKey(person);
+            blockingMap.putIfAbsent(soundexBlockingKey, new HashSet<>());
+            blockingMap.get(soundexBlockingKey).add(person);
             progressHandler.updateProgress();
         });
         return blockingMap;

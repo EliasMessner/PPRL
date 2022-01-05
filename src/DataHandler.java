@@ -84,7 +84,7 @@ public class DataHandler {
         personBloomFilterMap.put(person, bf);
     }
 
-    public static String getBlockingKey(Person person) {
+    public static String getSoundexBlockingKey(Person person) {
         Soundex soundex = new Soundex();
         return soundex.soundex(person.getAttributeValue("firstName"))
                 .concat(soundex.soundex(person.getAttributeValue("lastName")))

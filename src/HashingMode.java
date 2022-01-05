@@ -5,12 +5,12 @@ public enum HashingMode {
     RANDOM_HASHING;
 
     public static HashingMode parseFromString(String s) {
-        return switch (s) {
+        return switch (s.toUpperCase()) {
             case "DH" -> HashingMode.DOUBLE_HASHING;
             case "ED" -> HashingMode.ENHANCED_DOUBLE_HASHING;
             case "TH" -> HashingMode.TRIPLE_HASHING;
             case "RH" -> HashingMode.RANDOM_HASHING;
-            default -> throw new IllegalArgumentException("Unexpected Value for Hashing Mode.");
+            default -> throw new IllegalArgumentException("Unexpected Value for Hashing Mode '" + s + "'");
         };
     }
 }

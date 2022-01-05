@@ -22,10 +22,10 @@ public class ArgumentHelper {
 
     public static Parameters parseParametersFromArguments(String[] args) {
         HashingMode hashingMode = HashingMode.parseFromString(ArgumentHelper.parseString(args, "mode", "DH"));
-        boolean blocking = ArgumentHelper.parseBoolean(args, "b", false) ||
-                ArgumentHelper.parseBoolean(args, "blocking", false);
-        boolean weightedAttributes = ArgumentHelper.parseBoolean(args, "wa", false) ||
-                ArgumentHelper.parseBoolean(args, "weightedAttributes", false);
+        boolean blocking = ArgumentHelper.parseBoolean(args, "b", true) ||
+                ArgumentHelper.parseBoolean(args, "blocking", true);
+        boolean weightedAttributes = ArgumentHelper.parseBoolean(args, "wa", true) ||
+                ArgumentHelper.parseBoolean(args, "weightedAttributes", true);
         int l = Integer.parseInt(ArgumentHelper.parseString(args, "l", null));
         int k = Integer.parseInt(ArgumentHelper.parseString(args, "k", "10"));
         double t = Double.parseDouble(ArgumentHelper.parseString(args, "t", null));
@@ -35,7 +35,7 @@ public class ArgumentHelper {
     public static String parseString(String[] args, String argName, String defaultValue) {
         String parsedValue = Arrays.stream(args).filter(a -> a.startsWith(argName + "="))
                 .findFirst().orElse(defaultValue);
-        return parsedValue.toLowerCase().substring(parsedValue.indexOf("=")+1);
+        return parsedValue.substring(parsedValue.indexOf("=")+1);
     }
 
 }
