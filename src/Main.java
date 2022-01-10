@@ -7,7 +7,7 @@ public class Main {
     /**
      * The Main method. Arguments should be threshold (t), hashAreaSize (l), hashFunctionCount (k), mode,
      * weightedAttributes (wa), blocking (b).
-     * Or a csv file with the above arguments. Each line in the csv file represents the one set of parameters and there
+     * Or a csv file with the above arguments. Each line in the csv file represents one set of parameters and there
      * will be one iteration of the program per line.
      * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED b=true wa=true"
      */
@@ -15,25 +15,29 @@ public class Main {
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
+        List<Parameters> parametersList = new ArrayList<>();
+        List<Result> results = new ArrayList<>();
         if (args.length == 1) {
             // go by csv file
-            List<Result> results = new ArrayList<>();
-            List<Parameters> parametersList = FileHandler.parseParametersListFromFile(args[0]);
-            int i = 1;
-            for(Parameters parameters : parametersList) {
-                System.out.printf("Iteration %d/%d\n", i, parametersList.size());
-                PrecisionRecallStats stats = mainLoop(parameters, dataSet);
-                results.add(new Result(parameters, stats));
-                i++;
-            }
-            FileHandler.writeResults(results, "results/results.csv");
-        } else {
+            parametersList = FileHandler.parseParametersListFromFile(args[0]);
+        } else if (args.length > 1) {
             // go by command line arguments
-            mainLoop(ArgumentHelper.parseParametersFromArguments(args), dataSet);
+            parametersList.add(ArgumentHelper.parseParametersFromArguments(args));
+        } else {
+            // create parameters in nested for loop
+            parametersList = createParametersInNestedForLoop(dataSet);
         }
+        int i = 1;
+        for(Parameters parameters : parametersList) {
+            System.out.printf("Iteration %d/%d\n", i, parametersList.size());
+            PrecisionRecallStats stats = mainLoop(parameters, dataSet);
+            results.add(new Result(parameters, stats));
+            i++;
+        }
+        FileHandler.writeResults(results, "results", true);
     }
 
-    public static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
+    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
         System.out.println(parameters);
         long startTime = System.currentTimeMillis();
         // create all the bloom filters
@@ -54,6 +58,33 @@ public class Main {
         System.out.println(precisionRecallStats);
         System.out.println("\n\n");
         return precisionRecallStats;
+    }
+
+    private static List<Parameters> createParametersInNestedForLoop(Person[] dataSet) {
+        List<Parameters> parametersList = new ArrayList<>();
+        HashingMode[] modes = {HashingMode.DOUBLE_HASHING, HashingMode.ENHANCED_DOUBLE_HASHING};
+        boolean[] bValues = {true};
+        boolean[] waValues = {true, false};
+        String[] psValues = {"", "X", "123"};
+        int[] lValues = {1024};
+        int[] kValues = {10};
+        double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
+        for (HashingMode mode : modes) {
+            for (boolean b : bValues) {
+                for (boolean wa : waValues) {
+                    for (String ps : psValues) {
+                        for (int l : lValues) {
+                            for (int k : kValues) {
+                                for (double t : tValues) {
+                                    parametersList.add(new Parameters(mode, b, wa, ps, l, k, t));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return parametersList;
     }
 
     private static void iterateBlockingMap(Parameters parameters, ProgressHandler progressHandler,
@@ -103,7 +134,7 @@ public class Main {
         Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
         Arrays.stream(dataSet).parallel().forEach(person -> {
             DataHandler.createAndStoreBloomFilter(parameters.l(), parameters.k(), person, personBloomFilterMap,
-                    parameters.mode(), parameters.weightedAttributes());
+                    parameters.mode(), parameters.weightedAttributes(), parameters.paddingString());
             progressHandler.updateProgress();
         });
         return personBloomFilterMap;

@@ -14,17 +14,19 @@ public class BloomFilter {
     boolean[] hashArea;
     int hashFunctionCount; // # of hash functions to be simulated
     HashingMode mode;
+    String paddingString;
 
     /**
      * Constructor for BloomFilter instance. Hash area is initialized with all 0's.
      * @param hashAreaSize The length of the hash area.
      * @param hashFunctionCount The number of hash functions to be simulated through double hashing.
      */
-    public BloomFilter(int hashAreaSize, int hashFunctionCount, HashingMode mode) {
+    public BloomFilter(int hashAreaSize, int hashFunctionCount, HashingMode mode, String paddingString) {
         hashArea = new boolean[hashAreaSize];
         Arrays.fill(hashArea, false);
         this.hashFunctionCount = hashFunctionCount;
         this.mode = mode;
+        this.paddingString = paddingString;
     }
 
     /**
@@ -125,6 +127,7 @@ public class BloomFilter {
      * @throws NoSuchAlgorithmException
      */
     private void storeBigram(String bigram, int k) throws NoSuchAlgorithmException {
+        bigram = paddingString + bigram + paddingString;
         switch (mode) {
             case DOUBLE_HASHING -> storeBigramDouble(bigram, k);
             case ENHANCED_DOUBLE_HASHING -> storeBigramEnhancedDouble(bigram, k);
@@ -134,7 +137,10 @@ public class BloomFilter {
     }
 
     private void storeBigramRandom(String bigram, int k) {
-        long seed = bigram.charAt(0) + 257 * bigram.charAt(1);
+        long seed = 0;
+        for (int i = 0; i < bigram.length(); i++) {
+            seed += bigram.charAt(i) + 257L * i;
+        }
         Random generator = new Random(seed);
         int i = 0;
         while (i < k) {

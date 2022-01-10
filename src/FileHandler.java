@@ -1,11 +1,11 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class FileHandler {
@@ -20,8 +20,9 @@ public class FileHandler {
         Map<String, Integer> attributeIndices;
         List<Parameters> parametersList = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            // handle first line separately
             String line = br.readLine();
-            attributeIndices = handleFirstLine(line);
+            attributeIndices = getAttributeIndices(line);
             while ((line = br.readLine()) != null) {
                 parametersList.add(parseParametersFromLine(line, attributeIndices));
             }
@@ -32,15 +33,17 @@ public class FileHandler {
     /**
      * Writes the result record into a csv file in the "results" folder. Each record will be one line.
      * @param results list of result records.
-     * @param filePath csv file to write to.
+     * @param dirPath csv file to write to.
      * @throws IOException
      */
-    public static void writeResults(List<Result> results, String filePath) throws IOException {
+    public static void writeResults(List<Result> results, String dirPath, boolean timeStampInFileName) throws IOException {
         List<String> lines = new ArrayList<>(results.stream().map(Result::toCSVString).toList());
         lines.add(0, Result.getCSVHeadLine());
-        Path file = Paths.get(filePath);
-        if (!file.getParent().toFile().exists()) {
-            if (!file.getParent().toFile().mkdir()) {
+        Path dir = Paths.get(dirPath);
+        String timeStamp = timeStampInFileName ? " " + new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(new Date()) : "";
+        Path file = Paths.get(dirPath, "results" + timeStamp + ".csv");
+        if (!dir.toFile().exists()) {
+            if (!dir.toFile().mkdir()) {
                 throw new IOException("Unable to create results directory.");
             }
         }
@@ -49,20 +52,19 @@ public class FileHandler {
 
     private static Parameters parseParametersFromLine(String line, Map<String, Integer> attributeIndices) {
         String[] args = line.trim().split(" *, *");
-        assert args.length == 6;
         return new Parameters(
                 HashingMode.parseFromString(args[attributeIndices.get("mode")]),
                 Boolean.parseBoolean(args[attributeIndices.get("b")]),
                 Boolean.parseBoolean(args[attributeIndices.get("wa")]),
+                args[attributeIndices.get("sp")],
                 Integer.parseInt(args[attributeIndices.get("l")]),
                 Integer.parseInt(args[attributeIndices.get("k")]),
                 Double.parseDouble(args[attributeIndices.get("t")]));
     }
 
-    private static Map<String, Integer> handleFirstLine(String line) {
+    private static Map<String, Integer> getAttributeIndices(String line) {
         Map<String, Integer> attributeIndices = new HashMap<>();
         String[] args = line.trim().split(" *, *");
-        assert args.length == 6;
         for (int i = 0; i < args.length; i++) {
             attributeIndices.put(args[i], i);
         }
