@@ -27,7 +27,7 @@ public class DataHandler {
         int i = 0;
         while ((line = br.readLine()) != null) {
             if (line.trim().isEmpty()) continue;
-            String[] attributes = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // this regex means split by comma but only if there are an even number of quotation marks ahead
+            String[] attributes = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // this regex means split by comma but only if there is an even number of quotation marks ahead
             dataSet[i] = new Person(attributes);
             i++;
         }
@@ -74,8 +74,8 @@ public class DataHandler {
     }
 
     public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>
-            personBloomFilterMap, HashingMode mode, boolean weightedAttributes) {
-        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount, mode);
+            personBloomFilterMap, HashingMode mode, boolean weightedAttributes, String paddingString) {
+        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount, mode, paddingString);
         try {
             bf.storePersonData(person, weightedAttributes);
         } catch (NoSuchAlgorithmException e) {

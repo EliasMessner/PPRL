@@ -7,6 +7,7 @@ public record Result(Parameters parameters, PrecisionRecallStats precisionRecall
         return parameters.mode().toString() + ","
                 + parameters.blocking() + ","
                 + parameters.weightedAttributes() + ","
+                + parameters.paddingString() + ","
                 + parameters.l() + ","
                 + parameters.k() + ","
                 + parameters.t() + ","
@@ -20,6 +21,6 @@ public record Result(Parameters parameters, PrecisionRecallStats precisionRecall
     }
 
     public static String getCSVHeadLine() {
-        return "mode,b,wa,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
+        return "mode,b,wa,ps,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
     }
 }
