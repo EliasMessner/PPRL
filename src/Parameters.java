@@ -1,2 +1,2 @@
-public record Parameters(HashingMode mode, boolean blocking, boolean weightedAttributes, String paddingString, int l, int k, double t) {
+public record Parameters(HashingMode mode, boolean blocking, boolean weightedAttributes, String tokenSalting, int l, int k, double t) {
 }

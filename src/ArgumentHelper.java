@@ -26,11 +26,11 @@ public class ArgumentHelper {
                 ArgumentHelper.parseBoolean(args, "blocking", true);
         boolean weightedAttributes = ArgumentHelper.parseBoolean(args, "wa", true) ||
                 ArgumentHelper.parseBoolean(args, "weightedAttributes", true);
-        String paddingString = ArgumentHelper.parseString(args, "ps", "");
+        String tokenSalting = ArgumentHelper.parseString(args, "ts", "");
         int l = Integer.parseInt(ArgumentHelper.parseString(args, "l", null));
         int k = Integer.parseInt(ArgumentHelper.parseString(args, "k", "10"));
         double t = Double.parseDouble(ArgumentHelper.parseString(args, "t", null));
-        return new Parameters(hashingMode, blocking, weightedAttributes, paddingString, l, k, t);
+        return new Parameters(hashingMode, blocking, weightedAttributes, tokenSalting, l, k, t);
     }
 
     public static String parseString(String[] args, String argName, String defaultValue) {

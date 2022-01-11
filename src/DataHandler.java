@@ -56,34 +56,6 @@ public class DataHandler {
         return resultData;
     }
 
-    /**
-     * Given two Persons and a personBloomFilterMap, compare the corresponding Bloom Filters using Jaccard similarity
-     * and decide by a threshold if they match. Then evaluate the true match (globalID matched) and the predicted match
-     * using the given precisionRecallStats
-     * @param a data point a.
-     * @param b data point b.
-     * @param personBloomFilterMap Map containing the data points a and b as keys and readily created BloomFilters as values.
-     * @param threshold the threshold to decide by.
-     * @param precisionRecallStats instance to make evaluation on.
-     */
-    public static void evaluatePersonPair(Person a, Person b, Map<Person, BloomFilter> personBloomFilterMap, double threshold,
-                                          PrecisionRecallStats precisionRecallStats) {
-        BloomFilter bfa = personBloomFilterMap.get(a);
-        BloomFilter bfb = personBloomFilterMap.get(b);
-        precisionRecallStats.evaluate(a.equalGlobalID(b), bfa.computeJaccardSimilarity(bfb) >= threshold);
-    }
-
-    public static void createAndStoreBloomFilter(int hashAreaSize, int hashFunctionCount, Person person, Map<Person, BloomFilter>
-            personBloomFilterMap, HashingMode mode, boolean weightedAttributes, String paddingString) {
-        BloomFilter bf = new BloomFilter(hashAreaSize, hashFunctionCount, mode, paddingString);
-        try {
-            bf.storePersonData(person, weightedAttributes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        personBloomFilterMap.put(person, bf);
-    }
-
     public static String getSoundexBlockingKey(Person person) {
         Soundex soundex = new Soundex();
         return soundex.soundex(person.getAttributeValue("firstName"))
