@@ -17,7 +17,7 @@ public class Linker {
     public Set<PersonPair> getOneSidedMarriageLinking(Map<String, Set<Person>> blockingMap) {
         prepareProgressHandler(blockingMap);
         System.out.println("Linking data points...");
-        Map<Person, Match> linkingWithSimilarities = new HashMap<>();
+        Map<Person, Match> linkingWithSimilarities = Collections.synchronizedMap(new HashMap<>());
         blockingMap.keySet().parallelStream().forEach(blockingKey ->
                 oneSidedMarriageLinkingHelper(blockingMap.get(blockingKey), linkingWithSimilarities));
         Set<PersonPair> linking = new HashSet<>();
@@ -34,8 +34,10 @@ public class Linker {
         Person[] B = splitData.get(1);
         Arrays.stream(A).parallel().forEach(a -> Arrays.stream(B).parallel().forEach(b-> {
             double similarity = personBloomFilterMap.get(a).computeJaccardSimilarity(personBloomFilterMap.get(b));
-            if (similarity >= parameters.t() && (!linking.containsKey(a) || similarity >= linking.get(a).getSimilarity())) {
-                linking.put(a, new Match(b, similarity));
+            synchronized (linking) {
+                if (similarity >= parameters.t() && (!linking.containsKey(a) || similarity >= linking.get(a).getSimilarity())) {
+                    linking.put(a, new Match(b, similarity));
+                }
             }
             progressHandler.updateProgress();
         }));
@@ -44,7 +46,7 @@ public class Linker {
     public Set<PersonPair> getUnstableLinking(Map<String, Set<Person>> blockingMap) {
         prepareProgressHandler(blockingMap);
         System.out.println("Linking data points...");
-        Set<PersonPair> linking = new HashSet<>();
+        Set<PersonPair> linking = Collections.synchronizedSet(new HashSet<>());
         blockingMap.keySet().parallelStream().forEach(blockingKey ->
                 unstableLinkingHelper(blockingMap.get(blockingKey), linking));
         progressHandler.finish();

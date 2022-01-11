@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.Math.max;
 import static java.util.Map.entry;
@@ -14,7 +15,7 @@ public class Main {
      * will be one iteration of the program per line.
      * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED b=true wa=true"
      */
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException {
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
@@ -40,7 +41,7 @@ public class Main {
         FileHandler.writeResults(results, "results", true);
     }
 
-    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) throws NoSuchAlgorithmException {
+    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
         System.out.println(parameters);
         long startTime = System.currentTimeMillis();
         // create all the bloom filters
@@ -53,7 +54,7 @@ public class Main {
         //Set<PersonPair> linking = linker.getOneSidedMarriageLinking(blockingMap);
         Set<PersonPair> linking = linker.getUnstableLinking(blockingMap);
         // evaluate
-        PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000, 20000);
+        PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
         precisionRecallStats.evaluateAll(linking);
         // output and return
         long endTime = System.currentTimeMillis();
@@ -94,7 +95,7 @@ public class Main {
                                                                     ProgressHandler progressHandler) {
         progressHandler.reset();
         System.out.println("Creating Bloom Filters...");
-        Map<Person, BloomFilter> personBloomFilterMap = Collections.synchronizedMap(new HashMap<>());
+        Map<Person, BloomFilter> personBloomFilterMap = new ConcurrentHashMap<>();
         Arrays.stream(dataSet).parallel().forEach(person -> {
             BloomFilter bf = new BloomFilter(parameters.l(), parameters.k(), parameters.mode(), parameters.tokenSalting());
             bf.storePersonData(person, parameters.weightedAttributes());
@@ -124,11 +125,15 @@ public class Main {
      * @param progressHandler for showing progress in terminal
      */
     private static Map<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler) {
-        Map<String, Set<Person>> blockingMap = Collections.synchronizedMap(new HashMap<>());
+        Map<String, Set<Person>> blockingMap = new ConcurrentHashMap<>();
         Arrays.stream(dataSet).parallel().forEach(person -> {
             String soundexBlockingKey = DataHandler.getSoundexBlockingKey(person);
             blockingMap.putIfAbsent(soundexBlockingKey, new HashSet<>());
             blockingMap.get(soundexBlockingKey).add(person);
+            // add globalID as blocking key in order to avoid false negatives caused by blocking
+            String globalID = person.getAttributeValue("globalID");
+            blockingMap.putIfAbsent(globalID, new HashSet<>());
+            blockingMap.get(globalID).add(person);
             progressHandler.updateProgress();
         });
         return blockingMap;
