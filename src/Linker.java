@@ -41,12 +41,12 @@ public class Linker {
      * but each B-record can take part in any number of relations.
      * @return a set of person pairs representing the predicted matches.
      */
-    public Set<PersonPair> getOneSidedMarriageLinking() {
+    public Set<PersonPair> getOneSidedMarriageLinking(boolean leftIsMonogamous) {
         prepareProgressHandler(blockingMap);
         System.out.println("Linking data points...");
         Map<Person, Match> linkingWithSimilarities = Collections.synchronizedMap(new HashMap<>());
         blockingMap.keySet().parallelStream().forEach(blockingKey ->
-                oneSidedMarriageLinkingHelper(blockingMap.get(blockingKey), linkingWithSimilarities));
+                oneSidedMarriageLinkingHelper(blockingMap.get(blockingKey), linkingWithSimilarities, leftIsMonogamous));
         Set<PersonPair> linking = new HashSet<>();
         for (Person a : linkingWithSimilarities.keySet()) {
             linking.add(new PersonPair(a, linkingWithSimilarities.get(a).getPerson()));
@@ -57,16 +57,16 @@ public class Linker {
 
     /**
      * Undirected linking.
-     * Links the data points of the two sources to each other in an unstable manner. That means each data point can take
+     * Links the data points of the two sources to each other in a polygamous manner. That means each data point can take
      * part in any number of relations. But each relation is only contained in the resulting set once.
      * @return a set of person pairs representing the predicted matches.
      */
-    public Set<PersonPair> getUnstableLinking() {
+    public Set<PersonPair> getPolygamousLinking() {
         prepareProgressHandler(blockingMap);
         System.out.println("Linking data points...");
         Set<PersonPair> linking = Collections.synchronizedSet(new HashSet<>());
         blockingMap.keySet().parallelStream().forEach(blockingKey ->
-                unstableLinkingHelper(blockingMap.get(blockingKey), linking));
+                polygamousLinkingHelper(blockingMap.get(blockingKey), linking));
         progressHandler.finish();
         return linking;
     }
@@ -74,11 +74,11 @@ public class Linker {
     /**
      * Helper method for getOneSidedMarriageLinking
      */
-    private void oneSidedMarriageLinkingHelper(Set<Person> blockingSubSet, Map<Person, Match> linking) {
+    private void oneSidedMarriageLinkingHelper(Set<Person> blockingSubSet, Map<Person, Match> linking, boolean leftIsMonogamous) {
         List<Person[]> splitData = splitDataBySource(blockingSubSet.toArray(Person[]::new));
         Person[] A = splitData.get(0);
         Person[] B = splitData.get(1);
-        Arrays.stream(A).parallel().forEach(a -> Arrays.stream(B).parallel().forEach(b-> {
+        Arrays.stream(leftIsMonogamous ? A : B).parallel().forEach(a -> Arrays.stream(leftIsMonogamous ? B : A).parallel().forEach(b-> {
             double similarity = personBloomFilterMap.get(a).computeJaccardSimilarity(personBloomFilterMap.get(b));
             synchronized (linking) {
                 if (similarity >= parameters.t() && (!linking.containsKey(a) || similarity >= linking.get(a).getSimilarity())) {
@@ -90,9 +90,9 @@ public class Linker {
     }
 
     /**
-     * Helper method for getUnstableLinking
+     * Helper method for getPolygamousLinking
      */
-    private void unstableLinkingHelper(Set<Person> blockingSubSet, Set<PersonPair> linking) {
+    private void polygamousLinkingHelper(Set<Person> blockingSubSet, Set<PersonPair> linking) {
         List<Person[]> splitData = splitDataBySource(blockingSubSet.toArray(Person[]::new));
         Person[] A = splitData.get(0);
         Person[] B = splitData.get(1);

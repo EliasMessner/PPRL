@@ -59,8 +59,8 @@ public class Main {
                 Person::getSoundexBlockingKey, person -> person.getAttributeValue("globalID"));
         // get the linking
         Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B");
-        //Set<PersonPair> linking = linker.getOneSidedMarriageLinking();
-        Set<PersonPair> linking = linker.getUnstableLinking();
+        //Set<PersonPair> linking = linker.getOneSidedMarriageLinking(true);
+        Set<PersonPair> linking = linker.getPolygamousLinking();
         // evaluate
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
         precisionRecallStats.evaluateAll(linking);
