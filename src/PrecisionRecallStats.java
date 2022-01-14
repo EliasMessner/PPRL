@@ -1,3 +1,4 @@
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -6,24 +7,34 @@ import java.util.concurrent.atomic.AtomicLong;
 public class PrecisionRecallStats {
 
     public AtomicLong tp, tn, fp, fn;
+    private final long totalMatches;
+    private final long totalNonMatches;
 
-    public PrecisionRecallStats() {
+    public PrecisionRecallStats(long totalSize, long totalMatches) {
         tp = new AtomicLong();
         tn = new AtomicLong();
         fp = new AtomicLong();
         fn = new AtomicLong();
+        this.totalMatches = totalMatches;
+        this.totalNonMatches = totalSize - totalMatches;
+    }
+
+    public void evaluateAll(Set<PersonPair> linking) {
+        for (PersonPair personPair : linking) {
+            evaluate(personPair.getA().equalGlobalID(personPair.getB()), true);
+        }
     }
 
     public void evaluate(Boolean truth, Boolean prediction) {
-        if (truth && prediction)
-            tp.incrementAndGet();
-        else if (!truth && !prediction) {
-            tn.incrementAndGet();
-        } else if (truth) {
-            fn.incrementAndGet();
-        } else {
-            fp.incrementAndGet();
+        if (prediction) {
+            if (truth) {
+                tp.incrementAndGet();
+            } else {
+                fp.incrementAndGet();
+            }
         }
+        tn.set(totalNonMatches - fp.get());
+        fn.set(totalMatches - tp.get());
     }
 
     public void reset() {

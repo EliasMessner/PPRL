@@ -7,7 +7,7 @@ public record Result(Parameters parameters, PrecisionRecallStats precisionRecall
         return parameters.mode().toString() + ","
                 + parameters.blocking() + ","
                 + parameters.weightedAttributes() + ","
-                + parameters.paddingString() + ","
+                + parameters.tokenSalting() + ","
                 + parameters.l() + ","
                 + parameters.k() + ","
                 + parameters.t() + ","

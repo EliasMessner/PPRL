@@ -1,76 +1,65 @@
+import org.apache.commons.codec.language.Soundex;
+
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.util.Map.entry;
 
 /**
  * Class representing a person, with the attributes as in the dataset.
  */
 public class Person {
 
-    public static final String[] attributeNames = {"sourceID", "globalID", "localID", "firstName", "middleName",
-            "lastName", "yearOfBirth", "placeOfBirth", "country", "city", "zip", "gender", "ethnic", "race"};
+    public static String[] attributeNames;
     public String[] attributeValues;
-    public static Map<String, Double> attributeWeights = Map.ofEntries(
-            entry("firstName", 2.0),
-            entry("middleName", 0.5),
-            entry("lastName", 1.5),
-            entry("yearOfBirth", 2.5),
-            entry("placeOfBirth", 0.5),
-            entry("city", .5),
-            entry("country", .5),
-            entry("zip", .3),
-            entry("gender", 1.0),
-            entry("ethnic", 1.0),
-            entry("race", 1.0)
-    );
+    public static LinkedHashMap<String, Double> attributeWeights;
 
-
-    public Person(String[] attributes) {
-        if (attributes.length != 15) {
-            throw new IllegalArgumentException("Attribute array must have 15 elements.");
+    public Person(String... attributeValues) {
+        if (attributeValues.length != attributeNames.length) {
+            throw new IllegalArgumentException("Attribute array must have " + attributeNames.length + " elements.");
         }
-        if (attributes[0].length() != 1 || (!attributes[0].equals("A") && !attributes[0].equals("B"))) {
-            throw new IllegalArgumentException("SourceID must be 1 character either 'A' or 'B'");
-        }
-        if (attributes[12].length() > 1) {
-            throw new IllegalArgumentException("Gender if specified must be 1 character either 'F' or 'M'");
-        }
-        if (attributes[14].length() > 1) {
-            throw new IllegalArgumentException("Race if specified must be 1 character");
-        }
-        this.attributeValues = attributes;
+        this.attributeValues = attributeValues;
     }
 
     /**
-     * Returns a string of non identifying attributes concatenated. Non identifying are all but sourceID, globalID,
-     * localID. This string can later be used to generate a bloom filter.
-     * @return A string of non identifying attributes concatenated.
+     * Will statically store the attribute names (keys) and weights (key, value)-pairs into the class.
+     * The input order of the entries will be represented in the map, and is important for the constructor.
+     * Hence, this method must be called before first constructor call.
+     * Weight = 0.0 means the attribute will never be stored in a BloomFilter because it is an identifying attribute,
+     * like globalID etc.
+     * @param entries (attributeName, weight) - pairs in the order they should be stored in the map.
      */
-    public String concatenateNonIdentifyingAttributes() {
-        return String.join("", Arrays.copyOfRange(attributeValues, 3, 13));
+    @SafeVarargs
+    public static void setAttributeNamesAndWeights(Map.Entry<String, Double>... entries) {
+        attributeWeights = new LinkedHashMap<>();
+        for (Map.Entry<String, Double> entry : entries) {
+            attributeWeights.put(entry.getKey(), entry.getValue());
+        }
+        Person.attributeNames = attributeWeights.keySet().toArray(new String[0]);
     }
 
     /**
      * Returns the value of the attribute specified by its column name.
      * @param key the column name
      * @return the attribute value as string.
+     * @throws IllegalArgumentException if the specified attribute name does not exist.
      */
     public String getAttributeValue(String key) {
-        int index = 0;
-        while (index <= 13) {
-            if (attributeNames[index].equals(key)) {
-                return attributeValues[index];
-            }
-            index++;
+        for (int index = 0; index < attributeNames.length; index++) {
+            if (attributeNames[index].equals(key)) return attributeValues[index];
         }
         throw new IllegalArgumentException("No such attribute '" + key + "'");
     }
 
     public boolean equalGlobalID(Person other) {
         return this.attributeValues[1].equals(other.attributeValues[1]);
+    }
+
+    public String getSoundexBlockingKey() {
+        Soundex soundex = new Soundex();
+        return soundex.soundex(this.getAttributeValue("firstName"))
+                .concat(soundex.soundex(this.getAttributeValue("lastName")))
+                .concat(this.getAttributeValue("yearOfBirth"));
     }
 
     @Override

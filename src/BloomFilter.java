@@ -12,33 +12,38 @@ import java.util.*;
 public class BloomFilter {
 
     boolean[] hashArea;
-    int hashFunctionCount; // # of hash functions to be simulated
+    int k; // # of hash functions to be simulated
     HashingMode mode;
-    String paddingString;
+    String tokenSalting;
 
     /**
      * Constructor for BloomFilter instance. Hash area is initialized with all 0's.
      * @param hashAreaSize The length of the hash area.
-     * @param hashFunctionCount The number of hash functions to be simulated through double hashing.
+     * @param k The number of hash functions to be simulated through double hashing.
      */
-    public BloomFilter(int hashAreaSize, int hashFunctionCount, HashingMode mode, String paddingString) {
+    public BloomFilter(int hashAreaSize, int k, HashingMode mode, String tokenSalting) {
         hashArea = new boolean[hashAreaSize];
         Arrays.fill(hashArea, false);
-        this.hashFunctionCount = hashFunctionCount;
+        this.k = k;
         this.mode = mode;
-        this.paddingString = paddingString;
+        this.tokenSalting = tokenSalting;
     }
 
     /**
      * Stores each attribute, if specified with weighted attribute values.
      * @param person Person data to be stored
      */
-    public void storePersonData(Person person, boolean weightedAttributes) throws NoSuchAlgorithmException {
+    public void storePersonData(Person person, boolean weightedAttributes) {
         for (String attrName : Person.attributeWeights.keySet()) {
-            String attrVal = person.getAttributeValue(attrName);
             double weight = Person.attributeWeights.get(attrName);
-            int k = weightedAttributes ? (int) (hashFunctionCount * weight) : hashFunctionCount;
-            store(attrVal, k);
+            if (weight == 0.0) continue; // w = 0 means identifying attribute, like IDs
+            String attrVal = person.getAttributeValue(attrName);
+            int k = weightedAttributes ? (int) (this.k * weight) : this.k;
+            try {
+                store(attrVal, k);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -46,7 +51,6 @@ public class BloomFilter {
      * Splits given string into bigrams and stores all hash values of each bigram into the hash area, by simulating k
      * hash functions through double hashing.
      * @param attrValue attribute value as string.
-     * @throws NoSuchAlgorithmException
      */
     public void store(String attrValue, int k) throws NoSuchAlgorithmException {
         // TODO standardize string: remove non-alphanumerics, make all uppercase
@@ -124,10 +128,9 @@ public class BloomFilter {
      * bloom filter using the simulated hash functions.
      * @param bigram bigram to be stored
      * @param k number of hash functions to be simulated
-     * @throws NoSuchAlgorithmException
      */
     private void storeBigram(String bigram, int k) throws NoSuchAlgorithmException {
-        bigram = paddingString + bigram + paddingString;
+        bigram = tokenSalting + bigram + tokenSalting;
         switch (mode) {
             case DOUBLE_HASHING -> storeBigramDouble(bigram, k);
             case ENHANCED_DOUBLE_HASHING -> storeBigramEnhancedDouble(bigram, k);
