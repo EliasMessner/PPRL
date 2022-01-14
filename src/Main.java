@@ -1,24 +1,31 @@
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.lang.Math.max;
 import static java.util.Map.entry;
 
 public class Main {
 
-    /**
-     * The Main method. Arguments should be threshold (t), hashAreaSize (l), hashFunctionCount (k), mode,
-     * weightedAttributes (wa), blocking (b).
-     * Or a csv file with the above arguments. Each line in the csv file represents one set of parameters and there
-     * will be one iteration of the program per line.
-     * @param args argument specification, for example "t=0.7 l=1000 k=10 mode=ED b=true wa=true"
-     */
     public static void main(String[] args) throws IOException {
+        Person.setAttributeNamesAndWeights(
+                entry("sourceID", 0.0),
+                entry("globalID", 0.0),
+                entry("localID", 0.0),
+                entry("firstName", 2.0),
+                entry("middleName", 0.5),
+                entry("lastName", 1.5),
+                entry("yearOfBirth", 2.5),
+                entry("placeOfBirth", 0.5),
+                entry("country", .5),
+                entry("city", .5),
+                entry("zip", .3),
+                entry("street", .3),
+                entry("gender", 1.0),
+                entry("ethnic", 1.0),
+                entry("race", 1.0)
+        );
         // parse the data from the file
         System.out.println("Parsing Data...");
-        Person[] dataSet = DataHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
+        Person[] dataSet = FileHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
         List<Parameters> parametersList = new ArrayList<>();
         List<Result> results = new ArrayList<>();
         if (args.length == 1) {
@@ -47,12 +54,13 @@ public class Main {
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
-        // create blocking keys
-        Map<String, Set<Person>> blockingMap = getBlockingMap(parameters, dataSet, progressHandler);
+        // create blocking keys, use globalID as additional blocking key to avoid false negatives due to blocking
+        Map<String, Set<Person>> blockingMap = getBlockingMap(parameters.blocking(), dataSet, progressHandler,
+                Person::getSoundexBlockingKey, person -> person.getAttributeValue("globalID"));
         // get the linking
-        Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap);
-        //Set<PersonPair> linking = linker.getOneSidedMarriageLinking(blockingMap);
-        Set<PersonPair> linking = linker.getUnstableLinking(blockingMap);
+        Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B");
+        //Set<PersonPair> linking = linker.getOneSidedMarriageLinking();
+        Set<PersonPair> linking = linker.getUnstableLinking();
         // evaluate
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
         precisionRecallStats.evaluateAll(linking);
@@ -91,6 +99,10 @@ public class Main {
         return parametersList;
     }
 
+    /**
+     * Creates a BloomFilter for each Person object in given dataset and returns a map with Person as keys and
+     * BloomFilter as values.
+     */
     private static Map<Person, BloomFilter> getPersonBloomFilterMap(Parameters parameters, Person[] dataSet,
                                                                     ProgressHandler progressHandler) {
         progressHandler.reset();
@@ -106,34 +118,38 @@ public class Main {
         return personBloomFilterMap;
     }
 
-    private static Map<String, Set<Person>> getBlockingMap(Parameters parameters, Person[] dataSet, ProgressHandler progressHandler) {
+    /**
+     * Maps each entry in given dataset to a blocking key and returns the resulting map. If blocking is turned off, maps
+     * all records to the same blocking key "DUMMY_VALUE".
+     * @param blocking true if blocking is turned on, else false
+     * @param dataSet array of Person objects to be mapped onto keys
+     * @param progressHandler to display progress
+     * @return a map that maps each blocking key to a set of records encoded by that key.
+     */
+    private static Map<String, Set<Person>> getBlockingMap(Boolean blocking, Person[] dataSet, ProgressHandler progressHandler, BlockingKeyEncoder... blockingKeyEncoders) {
         Map<String, Set<Person>> blockingMap;
-        if (!parameters.blocking()) {
+        if (!blocking) {
             return Map.ofEntries(entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet))));
         }
         System.out.println("Creating Blocking Keys...");
         progressHandler.reset();
         progressHandler.setTotalSize(dataSet.length);
-        blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler);
+        blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler, blockingKeyEncoders);
         progressHandler.finish();
         return blockingMap;
     }
 
     /**
-     * Maps each entry in given dataset to a blocking key and returns the resulting map.
-     * @param dataSet dataset to be mapped
-     * @param progressHandler for showing progress in terminal
+     * Helper method for getBlockingMap.
      */
-    private static Map<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler) {
+    private static Map<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler, BlockingKeyEncoder... blockingKeyEncoders) {
         Map<String, Set<Person>> blockingMap = new ConcurrentHashMap<>();
         Arrays.stream(dataSet).parallel().forEach(person -> {
-            String soundexBlockingKey = DataHandler.getSoundexBlockingKey(person);
-            blockingMap.putIfAbsent(soundexBlockingKey, new HashSet<>());
-            blockingMap.get(soundexBlockingKey).add(person);
-            // add globalID as blocking key in order to avoid false negatives caused by blocking
-            String globalID = person.getAttributeValue("globalID");
-            blockingMap.putIfAbsent(globalID, new HashSet<>());
-            blockingMap.get(globalID).add(person);
+            for (BlockingKeyEncoder blockingKeyEncoder : blockingKeyEncoders) {
+                String blockingKey = blockingKeyEncoder.encode(person);
+                blockingMap.putIfAbsent(blockingKey, new HashSet<>());
+                blockingMap.get(blockingKey).add(person);
+            }
             progressHandler.updateProgress();
         });
         return blockingMap;

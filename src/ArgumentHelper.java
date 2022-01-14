@@ -1,5 +1,8 @@
 import java.util.Arrays;
 
+/**
+ * Class for handling command line arguments
+ */
 public class ArgumentHelper {
 
     /**

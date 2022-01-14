@@ -14,7 +14,7 @@ public class FileHandler {
      * Parses the program parameters from a csv file. The first line of the file should specify the column names.
      * Each line contains one set of parameters for the main loop.
      * @param filePath path of the file
-     * @return A list of the parameter objectes represented by the file
+     * @return A list of the parameter objects represented by the file
      */
     public static List<Parameters> parseParametersListFromFile(String filePath) throws IOException {
         Map<String, Integer> attributeIndices;
@@ -34,7 +34,6 @@ public class FileHandler {
      * Writes the result record into a csv file in the "results" folder. Each record will be one line.
      * @param results list of result records.
      * @param dirPath csv file to write to.
-     * @throws IOException
      */
     public static void writeResults(List<Result> results, String dirPath, boolean timeStampInFileName) throws IOException {
         List<String> lines = new ArrayList<>(results.stream().map(Result::toCSVString).toList());
@@ -50,6 +49,26 @@ public class FileHandler {
         Files.write(file, lines, StandardCharsets.UTF_8);
     }
 
+    /**
+     * Reads file and returns array of Person objects.
+     * @param filePath the filepath to the cvs file.
+     * @param size the number of entries in the dataset.
+     * @return array of Person instances represented by the file.
+     */
+    public static Person[] parseData(String filePath, int size) throws IOException {
+        Person[] dataSet = new Person[size];
+        BufferedReader br = new BufferedReader(new FileReader(filePath));
+        String line;
+        int i = 0;
+        while ((line = br.readLine()) != null) {
+            if (line.trim().isEmpty()) continue;
+            String[] attributes = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"); // this regex means split by comma but only if there is an even number of quotation marks ahead
+            dataSet[i] = new Person(attributes);
+            i++;
+        }
+        return dataSet;
+    }
+
     private static Parameters parseParametersFromLine(String line, Map<String, Integer> attributeIndices) {
         String[] args = line.trim().split(" *, *");
         return new Parameters(
@@ -62,6 +81,9 @@ public class FileHandler {
                 Double.parseDouble(args[attributeIndices.get("t")]));
     }
 
+    /**
+     * Helper method for parseParametersListFromFile.
+     */
     private static Map<String, Integer> getAttributeIndices(String line) {
         Map<String, Integer> attributeIndices = new HashMap<>();
         String[] args = line.trim().split(" *, *");

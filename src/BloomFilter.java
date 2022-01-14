@@ -35,8 +35,9 @@ public class BloomFilter {
      */
     public void storePersonData(Person person, boolean weightedAttributes) {
         for (String attrName : Person.attributeWeights.keySet()) {
-            String attrVal = person.getAttributeValue(attrName);
             double weight = Person.attributeWeights.get(attrName);
+            if (weight == 0.0) continue; // w = 0 means identifying attribute, like IDs
+            String attrVal = person.getAttributeValue(attrName);
             int k = weightedAttributes ? (int) (this.k * weight) : this.k;
             try {
                 store(attrVal, k);
@@ -50,7 +51,6 @@ public class BloomFilter {
      * Splits given string into bigrams and stores all hash values of each bigram into the hash area, by simulating k
      * hash functions through double hashing.
      * @param attrValue attribute value as string.
-     * @throws NoSuchAlgorithmException
      */
     public void store(String attrValue, int k) throws NoSuchAlgorithmException {
         // TODO standardize string: remove non-alphanumerics, make all uppercase
@@ -128,7 +128,6 @@ public class BloomFilter {
      * bloom filter using the simulated hash functions.
      * @param bigram bigram to be stored
      * @param k number of hash functions to be simulated
-     * @throws NoSuchAlgorithmException
      */
     private void storeBigram(String bigram, int k) throws NoSuchAlgorithmException {
         bigram = tokenSalting + bigram + tokenSalting;

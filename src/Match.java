@@ -1,3 +1,6 @@
+/**
+ * Class for representing a destination record (Person) in a match and the belonging similarity value.
+ */
 public class Match {
 
     private Person person;

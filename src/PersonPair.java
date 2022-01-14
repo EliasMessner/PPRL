@@ -2,18 +2,21 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Undirected pair of Person objects. (A, B) equals (B, A)
+ */
 public class PersonPair {
 
     private Person A;
     private Person B;
-    private Set<Person> set;
+    private Set<Person> representationAsSet;
 
     public PersonPair(Person a, Person b) {
         A = a;
         B = b;
-        set = new HashSet<>();
-        set.add(A);
-        set.add(B);
+        representationAsSet = new HashSet<>();
+        representationAsSet.add(A);
+        representationAsSet.add(B);
     }
 
     public Person getA() {
@@ -27,9 +30,9 @@ public class PersonPair {
     public void set(Person a, Person b) {
         A = a;
         B = b;
-        set.clear();
-        set.add(A);
-        set.add(B);
+        representationAsSet.clear();
+        representationAsSet.add(A);
+        representationAsSet.add(B);
     }
 
     @Override
@@ -37,11 +40,11 @@ public class PersonPair {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PersonPair that = (PersonPair) o;
-        return Objects.equals(set, that.set);
+        return Objects.equals(representationAsSet, that.representationAsSet);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(set);
+        return Objects.hash(representationAsSet);
     }
 }
