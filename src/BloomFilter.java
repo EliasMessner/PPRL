@@ -29,6 +29,9 @@ public class BloomFilter {
         this.tokenSalting = tokenSalting;
     }
 
+    public BloomFilter() {
+    }
+
     /**
      * Stores each attribute, if specified with weighted attribute values.
      * @param person Person data to be stored

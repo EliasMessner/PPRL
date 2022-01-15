@@ -60,7 +60,8 @@ public class Main {
         // get the linking
         Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B");
         //Set<PersonPair> linking = linker.getOneSidedMarriageLinking(true);
-        Set<PersonPair> linking = linker.getPolygamousLinking();
+        //Set<PersonPair> linking = linker.getPolygamousLinking();
+        Set<PersonPair> linking = linker.getStableMarriageLinking();
         // evaluate
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
         precisionRecallStats.evaluateAll(linking);

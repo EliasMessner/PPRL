@@ -19,7 +19,13 @@ public class ProgressHandler {
     }
 
     public void updateProgress() {
-        progressAbsolute.incrementAndGet();
+        updateProgress(1);
+    }
+
+    public void updateProgress(int units) {
+        for (int i = 0; i < units; i++) {
+            progressAbsolute.incrementAndGet();
+        }
         if ((100.0 * progressAbsolute.get() / totalSize) - progressPercent >= stepPercent) {
             progressPercent += stepPercent;
             printProgress();

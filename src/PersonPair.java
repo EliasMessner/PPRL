@@ -40,11 +40,15 @@ public class PersonPair {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PersonPair that = (PersonPair) o;
-        return Objects.equals(representationAsSet, that.representationAsSet);
+        return representationAsSet.equals(that.representationAsSet);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(representationAsSet);
+        return representationAsSet.hashCode();
+    }
+
+    public boolean contains(Person p) {
+        return representationAsSet.contains(p);
     }
 }

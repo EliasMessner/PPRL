@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
@@ -49,5 +50,13 @@ class PersonTest {
         Person otherNotEqual = new Person("A,CZ67291,XYZ,RONALD,EUGENE,LATTIMER,1953,OH,MOORE,PINEHURST,28374,BURNING TREE,M,NL,W".split(" *, *"));
         assertEquals(person, otherEqual);
         assertNotEquals(person, otherNotEqual);
+    }
+
+    @org.junit.jupiter.api.Test
+    void testHashCode() {
+        Person otherEqual = new Person("A,CZ67291,b36b8c16c743ed415c6a7f3fc1a3b859,RONALD,EUGENE,LATTIMER,1953,OH,MOORE,PINEHURST,28374,BURNING TREE,M,NL,W".split(" *, *"));
+        Person otherNotEqual = new Person("A,CZ67291,XYZ,RONALD,EUGENE,LATTIMER,1953,OH,MOORE,PINEHURST,28374,BURNING TREE,M,NL,W".split(" *, *"));
+        assertEquals(person.hashCode(), otherEqual.hashCode());
+        assertNotEquals(person.hashCode(), otherNotEqual.hashCode());
     }
 }
