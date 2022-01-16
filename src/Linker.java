@@ -36,6 +36,19 @@ public class Linker {
     }
 
     /**
+     * Calculates a linking according to the linking mode set in the parameters record.
+     * @return A set of pairs representing the predicted matches.
+     */
+    public Set<PersonPair> getLinking() {
+        return switch (parameters.linkingMode()) {
+            case POLYGAMOUS -> getPolygamousLinking();
+            case SEMI_MONOGAMOUS_LEFT -> getSemiMonogamousLinking(true);
+            case SEMI_MONOGAMOUS_RIGHT -> getSemiMonogamousLinking(false);
+            case STABLE_MARRIAGE -> getStableMarriageLinking();
+        };
+    }
+
+    /**
      * Undirected Linking.
      * Links the data points of the two sources A and B to each other in a stable marriage linking. That means that there exists
      * no records a and b who would both rather be matched with each other than their current partners.
@@ -46,7 +59,7 @@ public class Linker {
         System.out.println("Linking data points...");
         Set<PersonPair> allPairs = Collections.synchronizedSet(new HashSet<>());
         blockingMap.keySet().parallelStream().forEach(blockingKey -> {
-            Set<PersonPair> pairs = Collections.synchronizedSet(new HashSet<>());
+            Set<PersonPair> pairs = new HashSet<>();
             stableMarriageLinkingHelper(blockingMap.get(blockingKey), pairs);
             allPairs.addAll(pairs);
             progressHandler.updateProgress(blockingMap.get(blockingKey).size() * blockingMap.get(blockingKey).size());
@@ -118,12 +131,12 @@ public class Linker {
 
     /**
      * Undirected linking.
-     * Links the data points of the two sources to each other in a one-sided marriage manner. That means that each record
-     * from source A gets its ideal match from source B. Hence each A-record can only take part in up to one relation
+     * Links the data points of the two sources to each other in a semi-monogamous manner. That means that each record
+     * from source A gets its ideal match from source B. Hence, each A-record can only take part in up to one relation
      * but each B-record can take part in any number of relations.
      * @return a set of person pairs representing the predicted matches.
      */
-    public Set<PersonPair> getOneSidedMarriageLinking(boolean leftIsMonogamous) {
+    public Set<PersonPair> getSemiMonogamousLinking(boolean leftIsMonogamous) {
         prepareProgressHandler();
         System.out.println("Linking data points...");
         Map<Person, Match> linkingWithSimilarities = Collections.synchronizedMap(new HashMap<>());

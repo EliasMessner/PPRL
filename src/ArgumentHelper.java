@@ -24,7 +24,8 @@ public class ArgumentHelper {
     }
 
     public static Parameters parseParametersFromArguments(String[] args) {
-        HashingMode hashingMode = HashingMode.parseFromString(ArgumentHelper.parseString(args, "mode", "DH"));
+        LinkingMode linkingMode = LinkingMode.parseFromString(ArgumentHelper.parseString(args, "linkingMode", null));
+        HashingMode hashingMode = HashingMode.parseFromString(ArgumentHelper.parseString(args, "hashingMode", "DH"));
         boolean blocking = ArgumentHelper.parseBoolean(args, "b", true) ||
                 ArgumentHelper.parseBoolean(args, "blocking", true);
         boolean weightedAttributes = ArgumentHelper.parseBoolean(args, "wa", true) ||
@@ -33,7 +34,7 @@ public class ArgumentHelper {
         int l = Integer.parseInt(ArgumentHelper.parseString(args, "l", null));
         int k = Integer.parseInt(ArgumentHelper.parseString(args, "k", "10"));
         double t = Double.parseDouble(ArgumentHelper.parseString(args, "t", null));
-        return new Parameters(hashingMode, blocking, weightedAttributes, tokenSalting, l, k, t);
+        return new Parameters(linkingMode, hashingMode, blocking, weightedAttributes, tokenSalting, l, k, t);
     }
 
     public static String parseString(String[] args, String argName, String defaultValue) {

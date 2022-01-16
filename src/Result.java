@@ -4,7 +4,7 @@
 public record Result(Parameters parameters, PrecisionRecallStats precisionRecallStats) {
 
     public String toCSVString() {
-        return parameters.mode().toString() + ","
+        return parameters.hashingMode().toString() + ","
                 + parameters.blocking() + ","
                 + parameters.weightedAttributes() + ","
                 + parameters.tokenSalting() + ","
@@ -21,6 +21,6 @@ public record Result(Parameters parameters, PrecisionRecallStats precisionRecall
     }
 
     public static String getCSVHeadLine() {
-        return "mode,b,wa,ps,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
+        return "hashingMode,b,wa,ps,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
     }
 }

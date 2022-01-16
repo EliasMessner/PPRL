@@ -6,7 +6,7 @@ import java.util.*;
 
 /**
  * Class for hashing and storing string values into a bloom filter.
- * Uses double hashing, enhanced double hashing, triple hashing or random hashing, depending on mode.
+ * Uses double hashing, enhanced double hashing, triple hashing or random hashing, depending on hashingMode.
  * Uses bigrams.
  */
 public class BloomFilter {
@@ -127,7 +127,7 @@ public class BloomFilter {
     }
 
     /**
-     * Simulates k hash functions using specified hashing mode based on SHA-1, MD5 and MD2. Then stores given bigram in
+     * Simulates k hash functions using specified hashing hashingMode based on SHA-1, MD5 and MD2. Then stores given bigram in
      * bloom filter using the simulated hash functions.
      * @param bigram bigram to be stored
      * @param k number of hash functions to be simulated

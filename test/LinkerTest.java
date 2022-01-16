@@ -21,7 +21,7 @@ class LinkerTest {
         Person p6 = new Person("B", "6");
         Person p7 = new Person("B", "7");
         Person[] people = new Person[] { p0, p1, p2, p3, p4, p5, p6, p7 };
-        Parameters parameters = new Parameters(HashingMode.DOUBLE_HASHING, false, false, "", -1, -1, -1.0); // only dummy values needed
+        Parameters parameters = new Parameters(LinkingMode.POLYGAMOUS, HashingMode.DOUBLE_HASHING, false, false, "", -1, -1, -1.0); // only dummy values needed
         Map<Person, BloomFilter> personBloomFilterMap = new ConcurrentHashMap<>();
 
         personBloomFilterMap.put(p0, new BloomFilterMock(p0, new Person[]{p7, p5, p6, p4}));

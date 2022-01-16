@@ -72,7 +72,8 @@ public class FileHandler {
     private static Parameters parseParametersFromLine(String line, Map<String, Integer> attributeIndices) {
         String[] args = line.trim().split(" *, *");
         return new Parameters(
-                HashingMode.parseFromString(args[attributeIndices.get("mode")]),
+                LinkingMode.parseFromString(args[attributeIndices.get("linkingMode")]),
+                HashingMode.parseFromString(args[attributeIndices.get("hashingMode")]),
                 Boolean.parseBoolean(args[attributeIndices.get("b")]),
                 Boolean.parseBoolean(args[attributeIndices.get("wa")]),
                 args[attributeIndices.get("sp")],
