@@ -78,7 +78,7 @@ public class Main {
         List<Parameters> parametersList = new ArrayList<>();
         LinkingMode[] linkingModes = {LinkingMode.POLYGAMOUS, LinkingMode.SEMI_MONOGAMOUS_LEFT, LinkingMode.SEMI_MONOGAMOUS_RIGHT, LinkingMode.STABLE_MARRIAGE};
         HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING};
-        boolean[] bValues = {true};
+        boolean[] bValues = {true, false};
         boolean[] waValues = {true};
         String[] tsValues = {""};
         int[] lValues = {1024};
