@@ -19,6 +19,47 @@ public class PrecisionRecallStats {
         this.totalNonMatches = totalSize - totalMatches;
     }
 
+    public PrecisionRecallStats(long tp, long tn, long fp, long fn, long totalSize, long totalMatches) {
+        this.tp = new AtomicLong(tp);
+        this.tn = new AtomicLong(tn);
+        this.fp = new AtomicLong(fp);
+        this.fn = new AtomicLong(fn);
+        this.totalMatches = totalMatches;
+        this.totalNonMatches = totalSize - totalMatches;
+    }
+
+    public long getTp() {
+        return tp.get();
+    }
+
+    public void setTp(long tp) {
+        this.tp.set(tp);
+    }
+
+    public long getTn() {
+        return tn.get();
+    }
+
+    public void setTn(long tn) {
+        this.tn.set(tn);
+    }
+
+    public long getFp() {
+        return fp.get();
+    }
+
+    public void setFp(long fp) {
+        this.fp.set(fp);
+    }
+
+    public long getFn() {
+        return fn.get();
+    }
+
+    public void setFn(long fn) {
+        this.fn.set(fn);
+    }
+
     public void evaluateAll(Set<PersonPair> linking) {
         for (PersonPair personPair : linking) {
             evaluate(personPair.getA().equalGlobalID(personPair.getB()), true);

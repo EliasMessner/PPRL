@@ -43,7 +43,12 @@ public class Main {
         int i = 1;
         for(Parameters parameters : parametersList) {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
-            PrecisionRecallStats stats = mainLoop(parameters, dataSet);
+            PrecisionRecallStats stats;
+            if (parameters.tokenSalting().matches("r_[0-9]+")) {
+                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet);
+            } else {
+                stats = mainLoop(parameters, dataSet);
+            }
             results.add(new Result(parameters, stats));
             i++;
         }
@@ -76,11 +81,11 @@ public class Main {
 
     private static List<Parameters> createParametersInNestedForLoop() {
         List<Parameters> parametersList = new ArrayList<>();
-        LinkingMode[] linkingModes = {LinkingMode.POLYGAMOUS, LinkingMode.SEMI_MONOGAMOUS_LEFT, LinkingMode.SEMI_MONOGAMOUS_RIGHT, LinkingMode.STABLE_MARRIAGE};
-        HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING};
-        boolean[] bValues = {true, false};
+        LinkingMode[] linkingModes = {LinkingMode.POLYGAMOUS};
+        HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING, HashingMode.RANDOM_HASHING, HashingMode.TRIPLE_HASHING, HashingMode.ENHANCED_DOUBLE_HASHING};
+        boolean[] bValues = {true};
         boolean[] waValues = {true};
-        String[] tsValues = {""};
+        String[] tsValues = {"r_100"};
         int[] lValues = {1024};
         int[] kValues = {10};
         // double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
@@ -103,6 +108,32 @@ public class Main {
             }
         }
         return parametersList;
+    }
+
+    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet) {
+        Random random = new Random();
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
+        for (int i = 0; i < iterations; i++) {
+            System.out.printf("RandomTokenSalting - Iteration %d/%d\n", i, iterations);
+            char randomToken = alphabet.charAt(random.nextInt(alphabet.length()));
+            Parameters parameters_ = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
+                    parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken),
+                    parameters.l(), parameters.k(), parameters.t());
+            precisionRecallStatsList.add(mainLoop(parameters_, dataSet));
+        }
+        long tp = 0, tn = 0, fp = 0, fn = 0;
+        for (PrecisionRecallStats p : precisionRecallStatsList) {
+            tp += p.getTp();
+            tn += p.getTn();
+            fp += p.getFp();
+            fn += p.getFn();
+        }
+        tp /= precisionRecallStatsList.size();
+        tn /= precisionRecallStatsList.size();
+        fp /= precisionRecallStatsList.size();
+        fn /= precisionRecallStatsList.size();
+        return new PrecisionRecallStats(tp, tn, fp, fn, 100000L * 100000, 20000);
     }
 
     /**
