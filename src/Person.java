@@ -72,6 +72,6 @@ public class Person {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(attributeValues);
+        return Arrays.hashCode(attributeValues);
     }
 }

@@ -29,14 +29,16 @@ public class Main {
         List<Parameters> parametersList = new ArrayList<>();
         List<Result> results = new ArrayList<>();
         if (args.length == 1) {
+            // create parameters in nested for loop
+            parametersList = createParametersInNestedForLoop();
+        } else if (args.length == 2) {
             // go by csv file
             parametersList = FileHandler.parseParametersListFromFile(args[0]);
-        } else if (args.length > 1) {
+        } else if (args.length > 2) {
             // go by command line arguments
             parametersList.add(ArgumentHelper.parseParametersFromArguments(args));
         } else {
-            // create parameters in nested for loop
-            parametersList = createParametersInNestedForLoop();
+            throw new IllegalArgumentException("Too few arguments.");
         }
         int i = 1;
         for(Parameters parameters : parametersList) {
@@ -45,7 +47,8 @@ public class Main {
             results.add(new Result(parameters, stats));
             i++;
         }
-        FileHandler.writeResults(results, "results", true);
+        boolean createFileOutput = ArgumentHelper.parseBoolean(args, "out", true);
+        if (createFileOutput) FileHandler.writeResults(results, "results", true);
     }
 
     private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
@@ -59,8 +62,7 @@ public class Main {
                 Person::getSoundexBlockingKey, person -> person.getAttributeValue("globalID"));
         // get the linking
         Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B");
-        //Set<PersonPair> linking = linker.getOneSidedMarriageLinking(true);
-        Set<PersonPair> linking = linker.getPolygamousLinking();
+        Set<PersonPair> linking = linker.getLinking();
         // evaluate
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
         precisionRecallStats.evaluateAll(linking);
@@ -74,21 +76,25 @@ public class Main {
 
     private static List<Parameters> createParametersInNestedForLoop() {
         List<Parameters> parametersList = new ArrayList<>();
-        HashingMode[] modes = {HashingMode.DOUBLE_HASHING, HashingMode.ENHANCED_DOUBLE_HASHING};
-        boolean[] bValues = {true};
-        boolean[] waValues = {true, false};
-        String[] tsValues = {"", "X", "123"};
+        LinkingMode[] linkingModes = {LinkingMode.POLYGAMOUS, LinkingMode.SEMI_MONOGAMOUS_LEFT, LinkingMode.SEMI_MONOGAMOUS_RIGHT, LinkingMode.STABLE_MARRIAGE};
+        HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING};
+        boolean[] bValues = {true, false};
+        boolean[] waValues = {true};
+        String[] tsValues = {""};
         int[] lValues = {1024};
         int[] kValues = {10};
-        double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
-        for (HashingMode mode : modes) {
-            for (boolean b : bValues) {
-                for (boolean wa : waValues) {
-                    for (String ts : tsValues) {
-                        for (int l : lValues) {
-                            for (int k : kValues) {
-                                for (double t : tValues) {
-                                    parametersList.add(new Parameters(mode, b, wa, ts, l, k, t));
+        // double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
+        double[] tValues = {0.6};
+        for (LinkingMode linkingMode : linkingModes) {
+            for (HashingMode hashingMode : hashingModes) {
+                for (boolean b : bValues) {
+                    for (boolean wa : waValues) {
+                        for (String ts : tsValues) {
+                            for (int l : lValues) {
+                                for (int k : kValues) {
+                                    for (double t : tValues) {
+                                        parametersList.add(new Parameters(linkingMode, hashingMode, b, wa, ts, l, k, t));
+                                    }
                                 }
                             }
                         }
@@ -109,7 +115,7 @@ public class Main {
         System.out.println("Creating Bloom Filters...");
         Map<Person, BloomFilter> personBloomFilterMap = new ConcurrentHashMap<>();
         Arrays.stream(dataSet).parallel().forEach(person -> {
-            BloomFilter bf = new BloomFilter(parameters.l(), parameters.k(), parameters.mode(), parameters.tokenSalting());
+            BloomFilter bf = new BloomFilter(parameters.l(), parameters.k(), parameters.hashingMode(), parameters.tokenSalting());
             bf.storePersonData(person, parameters.weightedAttributes());
             personBloomFilterMap.put(person, bf);
             progressHandler.updateProgress();
