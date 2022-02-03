@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
 import static java.util.Map.entry;
 
 public class Main {
@@ -26,28 +28,30 @@ public class Main {
         // parse the data from the file
         System.out.println("Parsing Data...");
         Person[] dataSet = FileHandler.parseData("datasets/2021_NCVR_Panse_001/dataset_ncvr_dirty.csv", 200000);
+        // get the parameters
         List<Parameters> parametersList = new ArrayList<>();
         List<Result> results = new ArrayList<>();
-        if (args.length == 1) {
+        String[] requiredArguments = {"out", "parallel"};
+        ArgumentHelper.checkAllPresent(args, requiredArguments);
+        if (args.length == requiredArguments.length) {
             // create parameters in nested for loop
             parametersList = createParametersInNestedForLoop();
-        } else if (args.length == 2) {
-            // go by csv file
+        } else if (args.length == requiredArguments.length + 1) {
+            // get from csv file
             parametersList = FileHandler.parseParametersListFromFile(args[0]);
-        } else if (args.length > 2) {
-            // go by command line arguments
+        } else if (args.length > requiredArguments.length + 1) {
+            // get from line arguments
             parametersList.add(ArgumentHelper.parseParametersFromArguments(args));
-        } else {
-            throw new IllegalArgumentException("Too few arguments.");
         }
+        boolean parallel = ArgumentHelper.parseBoolean(args, "parallel", true);
         int i = 1;
         for(Parameters parameters : parametersList) {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
             PrecisionRecallStats stats;
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
-                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet);
+                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel);
             } else {
-                stats = mainLoop(parameters, dataSet);
+                stats = mainLoop(parameters, dataSet, parallel);
             }
             results.add(new Result(parameters, stats));
             i++;
@@ -56,17 +60,17 @@ public class Main {
         if (createFileOutput) FileHandler.writeResults(results, "results", true);
     }
 
-    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet) {
+    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet, boolean parallel) {
         System.out.println(parameters);
         long startTime = System.currentTimeMillis();
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
         // create blocking keys, use globalID as additional blocking key to avoid false negatives due to blocking
-        Map<String, Set<Person>> blockingMap = getBlockingMap(parameters.blocking(), dataSet, progressHandler,
+        Map<String, Set<Person>> blockingMap = getBlockingMap(parameters.blocking(), dataSet, progressHandler, parallel,
                 Person::getSoundexBlockingKey, person -> person.getAttributeValue("globalID"));
         // get the linking
-        Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B");
+        Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B", parallel);
         Set<PersonPair> linking = linker.getLinking();
         // evaluate
         PrecisionRecallStats precisionRecallStats = new PrecisionRecallStats(100000L * 100000, 20000);
@@ -110,17 +114,25 @@ public class Main {
         return parametersList;
     }
 
-    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet) {
+    /**
+     * Use random character for token salting. Do many iterations and return the average results.
+     * @param iterations # of iterations
+     * @param parameters the parameters - the tokenSalting value will be overwritten in each iteration by a random char
+     * @param dataSet the data
+     * @return average precisionRecallStats
+     */
+    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel) {
         Random random = new Random();
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
+        // TODO parallelize
         for (int i = 0; i < iterations; i++) {
             System.out.printf("RandomTokenSalting - Iteration %d/%d\n", i, iterations);
             char randomToken = alphabet.charAt(random.nextInt(alphabet.length()));
-            Parameters parameters_ = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
+            Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
                     parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken),
-                    parameters.l(), parameters.k(), parameters.t());
-            precisionRecallStatsList.add(mainLoop(parameters_, dataSet));
+                    parameters.l(), parameters.k(), parameters.t());  // set the parameter for the token salting to the random value
+            precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel));
         }
         long tp = 0, tn = 0, fp = 0, fn = 0;
         for (PrecisionRecallStats p : precisionRecallStatsList) {
@@ -163,7 +175,7 @@ public class Main {
      * @param progressHandler to display progress
      * @return a map that maps each blocking key to a set of records encoded by that key.
      */
-    private static Map<String, Set<Person>> getBlockingMap(Boolean blocking, Person[] dataSet, ProgressHandler progressHandler, BlockingKeyEncoder... blockingKeyEncoders) {
+    private static Map<String, Set<Person>> getBlockingMap(Boolean blocking, Person[] dataSet, ProgressHandler progressHandler, boolean parallel, BlockingKeyEncoder... blockingKeyEncoders) {
         Map<String, Set<Person>> blockingMap;
         if (!blocking) {
             return Map.ofEntries(entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(dataSet))));
@@ -171,7 +183,7 @@ public class Main {
         System.out.println("Creating Blocking Keys...");
         progressHandler.reset();
         progressHandler.setTotalSize(dataSet.length);
-        blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler, blockingKeyEncoders);
+        blockingMap = mapRecordsToBlockingKeys(dataSet, progressHandler, parallel, blockingKeyEncoders);
         progressHandler.finish();
         return blockingMap;
     }
@@ -179,9 +191,12 @@ public class Main {
     /**
      * Helper method for getBlockingMap.
      */
-    private static Map<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler, BlockingKeyEncoder... blockingKeyEncoders) {
-        Map<String, Set<Person>> blockingMap = new ConcurrentHashMap<>();
-        Arrays.stream(dataSet).parallel().forEach(person -> {
+    private static ConcurrentHashMap<String, Set<Person>> mapRecordsToBlockingKeys(Person[] dataSet, ProgressHandler progressHandler, boolean parallel, BlockingKeyEncoder... blockingKeyEncoders) {
+        ConcurrentHashMap<String, Set<Person>> blockingMap = new ConcurrentHashMap<>();
+        Stream<Person> stream = Arrays.stream(dataSet);
+        if (parallel) stream = stream.parallel();
+        stream.forEach(person -> {
+            if (person.equals(null)) throw new NullPointerException("Person cannot be null.");
             for (BlockingKeyEncoder blockingKeyEncoder : blockingKeyEncoders) {
                 String blockingKey = blockingKeyEncoder.encode(person);
                 blockingMap.putIfAbsent(blockingKey, new HashSet<>());

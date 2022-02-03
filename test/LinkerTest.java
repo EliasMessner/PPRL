@@ -36,7 +36,7 @@ class LinkerTest {
         Map<String, Set<Person>> blockingMap = Map.ofEntries(entry("DUMMY_VALUE", new HashSet<>(Arrays.asList(people))));
 
         linker = new Linker(people, new ProgressHandler(16, 1),
-                parameters, personBloomFilterMap, blockingMap, "A", "B");
+                parameters, personBloomFilterMap, blockingMap, "A", "B", true);
     }
 
     @Test

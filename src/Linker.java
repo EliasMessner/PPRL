@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 /**
  * Class for linking data points from two sources
@@ -13,6 +14,7 @@ public class Linker {
     Map<String, Set<Person>> blockingMap;
     String sourceNameA;
     String sourceNameB;
+    boolean parallel;
 
     /**
      * Constructor for Linker object that can then be used to perform various linking methods on the data.
@@ -25,7 +27,7 @@ public class Linker {
      * @param sourceNameB name of source B
      */
     public Linker(Person[] dataSet, ProgressHandler progressHandler, Parameters parameters, Map<Person, BloomFilter> personBloomFilterMap,
-                  Map<String, Set<Person>> blockingMap, String sourceNameA, String sourceNameB) {
+                  Map<String, Set<Person>> blockingMap, String sourceNameA, String sourceNameB, boolean parallel) {
         this.dataSet = dataSet;
         this.progressHandler = progressHandler;
         this.parameters = parameters;
@@ -33,6 +35,7 @@ public class Linker {
         this.sourceNameA = sourceNameA;
         this.sourceNameB = sourceNameB;
         this.blockingMap = blockingMap;
+        this.parallel = parallel;
     }
 
     /**
@@ -57,8 +60,10 @@ public class Linker {
     public Set<PersonPair> getStableMarriageLinking() {
         prepareProgressHandler();
         System.out.println("Linking data points...");
+        Stream<String> blockingKeysStream = blockingMap.keySet().stream();
+        if (parallel) blockingKeysStream = blockingKeysStream.parallel();
         Set<PersonPair> allPairs = Collections.synchronizedSet(new HashSet<>());
-        blockingMap.keySet().parallelStream().forEach(blockingKey -> {
+        blockingKeysStream.forEach(blockingKey -> {
             Set<PersonPair> pairs = new HashSet<>();
             stableMarriageLinkingHelper(blockingMap.get(blockingKey), pairs);
             allPairs.addAll(pairs);
@@ -111,7 +116,9 @@ public class Linker {
         if (freeA == null) return null;
         final AtomicReference<Person> favoriteB = new AtomicReference<>(null);
         final AtomicReference<Double> similarity = new AtomicReference<>(0.0);
-        Arrays.stream(Bs).parallel().forEach(B -> {
+        Stream<Person> personStream = Arrays.stream(Bs);
+        if (parallel) personStream = personStream.parallel();
+        personStream.forEach(B -> {
             if (hasProposedTo.containsKey(freeA) && hasProposedTo.get(freeA).contains(B)) return;
             double newSimilarity = personBloomFilterMap.get(freeA).computeJaccardSimilarity(personBloomFilterMap.get(B));
             if (favoriteB.get() == null || newSimilarity > similarity.get()) {
@@ -140,7 +147,9 @@ public class Linker {
         prepareProgressHandler();
         System.out.println("Linking data points...");
         Map<Person, Match> linkingWithSimilarities = Collections.synchronizedMap(new HashMap<>());
-        blockingMap.keySet().parallelStream().forEach(blockingKey ->
+        Stream<String> blockingKeysStream = blockingMap.keySet().stream();
+        if (parallel) blockingKeysStream = blockingKeysStream.parallel();
+        blockingKeysStream.forEach(blockingKey ->
                 oneSidedMarriageLinkingHelper(blockingMap.get(blockingKey), linkingWithSimilarities, leftIsMonogamous));
         Set<PersonPair> linking = new HashSet<>();
         for (Person a : linkingWithSimilarities.keySet()) {
@@ -160,7 +169,9 @@ public class Linker {
         prepareProgressHandler();
         System.out.println("Linking data points...");
         Set<PersonPair> linking = Collections.synchronizedSet(new HashSet<>());
-        blockingMap.keySet().parallelStream().forEach(blockingKey ->
+        Stream<String> blockingKeysStream = blockingMap.keySet().stream();
+        if (parallel) blockingKeysStream = blockingKeysStream.parallel();
+        blockingKeysStream.forEach(blockingKey ->
                 polygamousLinkingHelper(blockingMap.get(blockingKey), linking));
         progressHandler.finish();
         return linking;
@@ -173,7 +184,9 @@ public class Linker {
         List<Person[]> splitData = splitDataBySource(blockingSubSet.toArray(Person[]::new));
         Person[] A = splitData.get(0);
         Person[] B = splitData.get(1);
-        Arrays.stream(leftIsMonogamous ? A : B).parallel().forEach(a -> Arrays.stream(leftIsMonogamous ? B : A).parallel().forEach(b-> {
+        Stream<Person> outerStream = Arrays.stream(leftIsMonogamous ? A : B);
+        if (parallel) outerStream = outerStream.parallel();
+        outerStream.forEach(a -> Arrays.stream(leftIsMonogamous ? B : A).forEach(b-> {
             double similarity = personBloomFilterMap.get(a).computeJaccardSimilarity(personBloomFilterMap.get(b));
             synchronized (linking) {
                 if (similarity >= parameters.t() && (!linking.containsKey(a) || similarity >= linking.get(a).getSimilarity())) {
@@ -188,10 +201,14 @@ public class Linker {
      * Helper method for getPolygamousLinking
      */
     private void polygamousLinkingHelper(Set<Person> blockingSubSet, Set<PersonPair> linking) {
-        List<Person[]> splitData = splitDataBySource(blockingSubSet.toArray(Person[]::new));
+        Util.checkIfNoneNull(blockingSubSet);
+        Person[] blockingSubSetAsArray = blockingSubSet.toArray(Person[]::new);
+        Util.checkIfNoneNull(blockingSubSetAsArray);
+        List<Person[]> splitData = splitDataBySource(blockingSubSetAsArray);
         Person[] A = splitData.get(0);
         Person[] B = splitData.get(1);
-        Arrays.stream(A).parallel().forEach(a -> Arrays.stream(B).parallel().forEach(b-> {
+        Stream<Person> outerStream = parallel ? Arrays.stream(A) : Arrays.stream(A).parallel();
+        outerStream.forEach(a -> Arrays.stream(B).forEach(b-> {
             double similarity = personBloomFilterMap.get(a).computeJaccardSimilarity(personBloomFilterMap.get(b));
             if (similarity >= parameters.t()) {
                 linking.add(new PersonPair(a, b));
@@ -201,7 +218,7 @@ public class Linker {
     }
 
     /**
-     * Splits the dataset into two equally sized subsets by the sourceID attribute. Therefor the dataset is expected to
+     * Splits the dataset into two equally sized subsets by the sourceID attribute. Therefore, the dataset is expected to
      * have half the entries with sourceID "A", the other half with sourceID "B".
      * @param dataSet the array to be split.
      * @return a 2D Person-array, the first dimension only containing two entries, each a subset of the dataset.

@@ -23,6 +23,23 @@ public class ArgumentHelper {
         }
     }
 
+    public static boolean argumentIsPresent(String[] args, String requiredArgName) {
+        return Arrays.stream(args).anyMatch(a -> a.startsWith(requiredArgName + "="));
+    }
+
+    public static boolean allPresent(String[] args, String[] argNames) {
+        for (String argName : argNames) {
+            if (!argumentIsPresent(args, argName)) return false;
+        }
+        return true;
+    }
+
+    public static void checkAllPresent(String[] args, String[] requiredArgNames) {
+        if (!allPresent(args, requiredArgNames)) {
+            throw new IllegalArgumentException("Required Argument(s) missing");
+        }
+    }
+
     public static Parameters parseParametersFromArguments(String[] args) {
         LinkingMode linkingMode = LinkingMode.parseFromString(ArgumentHelper.parseString(args, "linkingMode", null));
         HashingMode hashingMode = HashingMode.parseFromString(ArgumentHelper.parseString(args, "hashingMode", "DH"));
