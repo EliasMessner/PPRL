@@ -115,7 +115,8 @@ public class Main {
     }
 
     /**
-     * Use random character for token salting. Do many iterations and return the average results.
+     * Do many iterations of the mainLoop method, in each iteration the token-salting value will be set to a new random
+     * character. Return the arithmetic mean of the results of all iterations.
      * @param iterations # of iterations
      * @param parameters the parameters - the tokenSalting value will be overwritten in each iteration by a random char
      * @param dataSet the data
@@ -125,27 +126,15 @@ public class Main {
         Random random = new Random();
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
-        // TODO parallelize
         for (int i = 0; i < iterations; i++) {
             System.out.printf("RandomTokenSalting - Iteration %d/%d\n", i, iterations);
             char randomToken = alphabet.charAt(random.nextInt(alphabet.length()));
             Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
-                    parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken),
-                    parameters.l(), parameters.k(), parameters.t());  // set the parameter for the token salting to the random value
+                    parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken), // set the parameter for the token salting to the random value
+                    parameters.l(), parameters.k(), parameters.t());
             precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel));
         }
-        long tp = 0, tn = 0, fp = 0, fn = 0;
-        for (PrecisionRecallStats p : precisionRecallStatsList) {
-            tp += p.getTp();
-            tn += p.getTn();
-            fp += p.getFp();
-            fn += p.getFn();
-        }
-        tp /= precisionRecallStatsList.size();
-        tn /= precisionRecallStatsList.size();
-        fp /= precisionRecallStatsList.size();
-        fn /= precisionRecallStatsList.size();
-        return new PrecisionRecallStats(tp, tn, fp, fn, 100000L * 100000, 20000);
+        return PrecisionRecallStats.getArithmeticMean(precisionRecallStatsList);
     }
 
     /**

@@ -1,3 +1,4 @@
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -76,6 +77,21 @@ public class PrecisionRecallStats {
         }
         tn.set(totalNonMatches - fp.get());
         fn.set(totalMatches - tp.get());
+    }
+
+    public static PrecisionRecallStats getArithmeticMean(Collection<PrecisionRecallStats> precisionRecallStatsList) {
+        long tp = 0, tn = 0, fp = 0, fn = 0;
+        for (PrecisionRecallStats p : precisionRecallStatsList) {
+            tp += p.getTp();
+            tn += p.getTn();
+            fp += p.getFp();
+            fn += p.getFn();
+        }
+        tp /= precisionRecallStatsList.size();
+        tn /= precisionRecallStatsList.size();
+        fp /= precisionRecallStatsList.size();
+        fn /= precisionRecallStatsList.size();
+        return new PrecisionRecallStats(tp, tn, fp, fn, 100000L * 100000, 20000);
     }
 
     public void reset() {
