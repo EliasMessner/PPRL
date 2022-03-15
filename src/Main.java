@@ -49,7 +49,8 @@ public class Main {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
             PrecisionRecallStats stats;
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
-                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()));
+                List<PrecisionRecallStats> randomTokenSaltingResults = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()));
+                stats = PrecisionRecallStats.getArithmeticMean(randomTokenSaltingResults);
             } else {
                 stats = mainLoop(parameters, dataSet, parallel);
             }
@@ -116,7 +117,7 @@ public class Main {
 
     /**
      * Do many iterations of the mainLoop method, in each iteration the token-salting value will be set to a new random
-     * character. Return the arithmetic mean of the results of all iterations.
+     * character. Return a list of all results of the iterations.
      * @param iterations # of iterations to be done
      * @param parameters the parameters - the tokenSalting value will be overwritten in each iteration by a random char
      * @param dataSet the data
@@ -125,7 +126,7 @@ public class Main {
      *                          string will be printed as output on the console.
      * @return average precisionRecallStats
      */
-    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag) {
+    private static List<PrecisionRecallStats> randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag) {
         Random random = new Random();
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
@@ -137,7 +138,7 @@ public class Main {
                     parameters.l(), parameters.k(), parameters.t());
             precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel));
         }
-        return PrecisionRecallStats.getArithmeticMean(precisionRecallStatsList);
+        return precisionRecallStatsList;
     }
 
     /**
