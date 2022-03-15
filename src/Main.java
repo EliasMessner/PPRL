@@ -68,10 +68,14 @@ public class Main {
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
-        // create blocking keys. If blockingCheat turned on, use globalID as additional blocking key to avoid false negatives due to blocking
+        // create the blockingKeyEncoders to generate the blockingMap
         List<BlockingKeyEncoder> blockingKeyEncoders = new ArrayList<>();
-        blockingKeyEncoders.add(Person::getSoundexBlockingKey);
+        blockingKeyEncoders.add(person -> person.getSoundex("firstName").concat(person.getAttributeValue("yearOfBirth")));
+        blockingKeyEncoders.add(person -> person.getSoundex("lastName").concat(person.getAttributeValue("yearOfBirth")));
+        blockingKeyEncoders.add(person -> person.getSoundex("firstName").concat(person.getSoundex("lastName")));
+        // If blockingCheat turned on, use globalID as additional blocking key to avoid false negatives due to blocking
         if (blockingCheat) blockingKeyEncoders.add(person -> person.getAttributeValue("globalID"));
+        // create blockingMap
         Map<String, Set<Person>> blockingMap = getBlockingMap(parameters.blocking(), dataSet, progressHandler, parallel,
                 blockingKeyEncoders.toArray(BlockingKeyEncoder[]::new));
         // get the linking
@@ -165,7 +169,7 @@ public class Main {
     }
 
     /**
-     * Maps each entry in given dataset to a blocking key and returns the resulting map. If blocking is turned off, maps
+     * Assigns each entry in given dataset to a blocking key and returns the resulting map. If blocking is turned off, maps
      * all records to the same blocking key "DUMMY_VALUE".
      * @param blocking true if blocking is turned on, else false
      * @param dataSet array of Person objects to be mapped onto keys

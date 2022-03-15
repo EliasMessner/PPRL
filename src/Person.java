@@ -55,11 +55,9 @@ public class Person {
         return this.attributeValues[1].equals(other.attributeValues[1]);
     }
 
-    public String getSoundexBlockingKey() {
+    public String getSoundex(String attributeName) {
         Soundex soundex = new Soundex();
-        return soundex.soundex(this.getAttributeValue("firstName"))
-                .concat(soundex.soundex(this.getAttributeValue("lastName")))
-                .concat(this.getAttributeValue("yearOfBirth"));
+        return soundex.soundex(this.getAttributeValue(attributeName));
     }
 
     @Override
