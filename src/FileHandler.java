@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLOutput;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -47,6 +48,7 @@ public class FileHandler {
             }
         }
         Files.write(file, lines, StandardCharsets.UTF_8);
+        System.out.printf("Output written to file '%s'\n", file);
     }
 
     /**

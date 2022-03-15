@@ -21,6 +21,6 @@ public record Result(Parameters parameters, PrecisionRecallStats precisionRecall
     }
 
     public static String getCSVHeadLine() {
-        return "hashingMode,b,wa,ps,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
+        return "hashingMode,b,wa,ts,l,k,t,tp,tn,fp,fn,precision,recall,f1-score";
     }
 }

@@ -49,7 +49,7 @@ public class Main {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
             PrecisionRecallStats stats;
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
-                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel);
+                stats = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()));
             } else {
                 stats = mainLoop(parameters, dataSet, parallel);
             }
@@ -117,17 +117,20 @@ public class Main {
     /**
      * Do many iterations of the mainLoop method, in each iteration the token-salting value will be set to a new random
      * character. Return the arithmetic mean of the results of all iterations.
-     * @param iterations # of iterations
+     * @param iterations # of iterations to be done
      * @param parameters the parameters - the tokenSalting value will be overwritten in each iteration by a random char
      * @param dataSet the data
+     * @param mainIterationFlag A String indicating the number of mainLoop iterations already finished, for example
+     *                          (1/4) if in total 4 iterations of mainLoop will be done and this is the first one. The
+     *                          string will be printed as output on the console.
      * @return average precisionRecallStats
      */
-    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel) {
+    private static PrecisionRecallStats randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag) {
         Random random = new Random();
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
-            System.out.printf("RandomTokenSalting - Iteration %d/%d\n", i, iterations);
+            System.out.printf("RandomTokenSalting - Iteration %d/%d (%s)\n", i, iterations, mainIterationFlag);
             char randomToken = alphabet.charAt(random.nextInt(alphabet.length()));
             Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
                     parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken), // set the parameter for the token salting to the random value
@@ -185,7 +188,6 @@ public class Main {
         Stream<Person> stream = Arrays.stream(dataSet);
         if (parallel) stream = stream.parallel();
         stream.forEach(person -> {
-            if (person.equals(null)) throw new NullPointerException("Person cannot be null.");
             for (BlockingKeyEncoder blockingKeyEncoder : blockingKeyEncoders) {
                 String blockingKey = blockingKeyEncoder.encode(person);
                 blockingMap.putIfAbsent(blockingKey, new HashSet<>());
