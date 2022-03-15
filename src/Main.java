@@ -50,11 +50,11 @@ public class Main {
             PrecisionRecallStats stats;
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
                 List<PrecisionRecallStats> randomTokenSaltingResults = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()));
-                stats = PrecisionRecallStats.getArithmeticMean(randomTokenSaltingResults);
+                randomTokenSaltingResults.forEach(precisionRecallStats -> results.add(new Result(parameters, precisionRecallStats)));
             } else {
                 stats = mainLoop(parameters, dataSet, parallel);
+                results.add(new Result(parameters, stats));
             }
-            results.add(new Result(parameters, stats));
             i++;
         }
         boolean createFileOutput = ArgumentHelper.parseBoolean(args, "out", true);
