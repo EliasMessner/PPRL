@@ -44,32 +44,36 @@ public class Main {
             parametersList.add(ArgumentHelper.parseParametersFromArguments(args));
         }
         boolean parallel = ArgumentHelper.parseBoolean(args, "parallel", true);
+        boolean createFileOutput = ArgumentHelper.parseBoolean(args, "out", true);
+        boolean blockingCheat = ArgumentHelper.parseBoolean(args, "blockingCheat", true);
         int i = 1;
         for(Parameters parameters : parametersList) {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
             PrecisionRecallStats stats;
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
-                List<PrecisionRecallStats> randomTokenSaltingResults = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()));
+                List<PrecisionRecallStats> randomTokenSaltingResults = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()), blockingCheat);
                 randomTokenSaltingResults.forEach(precisionRecallStats -> results.add(new Result(parameters, precisionRecallStats)));
             } else {
-                stats = mainLoop(parameters, dataSet, parallel);
+                stats = mainLoop(parameters, dataSet, parallel, blockingCheat);
                 results.add(new Result(parameters, stats));
             }
             i++;
         }
-        boolean createFileOutput = ArgumentHelper.parseBoolean(args, "out", true);
         if (createFileOutput) FileHandler.writeResults(results, "results", true);
     }
 
-    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet, boolean parallel) {
+    private static PrecisionRecallStats mainLoop(Parameters parameters, Person[] dataSet, boolean parallel, boolean blockingCheat) {
         System.out.println(parameters);
         long startTime = System.currentTimeMillis();
         // create all the bloom filters
         ProgressHandler progressHandler = new ProgressHandler(dataSet.length, 1);
         Map<Person, BloomFilter> personBloomFilterMap = getPersonBloomFilterMap(parameters, dataSet, progressHandler);
-        // create blocking keys, use globalID as additional blocking key to avoid false negatives due to blocking
+        // create blocking keys. If blockingCheat turned on, use globalID as additional blocking key to avoid false negatives due to blocking
+        List<BlockingKeyEncoder> blockingKeyEncoders = new ArrayList<>();
+        blockingKeyEncoders.add(Person::getSoundexBlockingKey);
+        if (blockingCheat) blockingKeyEncoders.add(person -> person.getAttributeValue("globalID"));
         Map<String, Set<Person>> blockingMap = getBlockingMap(parameters.blocking(), dataSet, progressHandler, parallel,
-                Person::getSoundexBlockingKey, person -> person.getAttributeValue("globalID"));
+                blockingKeyEncoders.toArray(BlockingKeyEncoder[]::new));
         // get the linking
         Linker linker = new Linker(dataSet, progressHandler, parameters, personBloomFilterMap, blockingMap, "A", "B", parallel);
         Set<PersonPair> linking = linker.getLinking();
@@ -126,7 +130,7 @@ public class Main {
      *                          string will be printed as output on the console.
      * @return average precisionRecallStats
      */
-    private static List<PrecisionRecallStats> randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag) {
+    private static List<PrecisionRecallStats> randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag, boolean blockingCheat) {
         Random random = new Random();
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
@@ -136,7 +140,7 @@ public class Main {
             Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
                     parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken), // set the parameter for the token salting to the random value
                     parameters.l(), parameters.k(), parameters.t());
-            precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel));
+            precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel, blockingCheat));
         }
         return precisionRecallStatsList;
     }
