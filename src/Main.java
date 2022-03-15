@@ -31,7 +31,7 @@ public class Main {
         // get the parameters
         List<Parameters> parametersList = new ArrayList<>();
         List<Result> results = new ArrayList<>();
-        String[] requiredArguments = {"out", "parallel"};
+        String[] requiredArguments = {"out", "parallel", "blockingCheat"};
         ArgumentHelper.checkAllPresent(args, requiredArguments);
         if (args.length == requiredArguments.length) {
             // create parameters in nested for loop
