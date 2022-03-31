@@ -40,7 +40,7 @@ public class FileHandler {
         List<String> lines = new ArrayList<>(results.stream().map(Result::toCSVString).toList());
         lines.add(0, Result.getCSVHeadLine());
         Path dir = Paths.get(dirPath);
-        String timeStamp = timeStampInFileName ? " " + new SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(new Date()) : "";
+        String timeStamp = timeStampInFileName ? "_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) : "";
         Path file = Paths.get(dirPath, "results" + timeStamp + ".csv");
         if (!dir.toFile().exists()) {
             if (!dir.toFile().mkdir()) {

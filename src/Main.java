@@ -132,7 +132,7 @@ public class Main {
      * @param mainIterationFlag A String indicating the number of mainLoop iterations already finished, for example
      *                          (1/4) if in total 4 iterations of mainLoop will be done and this is the first one. The
      *                          string will be printed as output on the console.
-     * @return average precisionRecallStats
+     * @return list of precisionRecallStats
      */
     private static List<PrecisionRecallStats> randomTokenSalting(int iterations, Parameters parameters, Person[] dataSet, boolean parallel, String mainIterationFlag, boolean blockingCheat) {
         Random random = new Random();
