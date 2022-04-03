@@ -102,7 +102,7 @@ public class Main {
         int[] lValues = {1024};
         int[] kValues = {10};
         // double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
-        double[] tValues = {0.6};
+        double[] tValues = {0.65, 0.7, 0.75, 0.8, 0.85};
         for (LinkingMode linkingMode : linkingModes) {
             for (HashingMode hashingMode : hashingModes) {
                 for (boolean b : bValues) {
