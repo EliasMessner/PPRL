@@ -145,7 +145,7 @@ public class BloomFilter {
     private void storeBigramRandom(String bigram, int k) {
         long seed = 0;
         for (int i = 0; i < bigram.length(); i++) {
-            seed += bigram.charAt(i) + 257L * i;
+            seed += bigram.charAt(i) * (Math.pow(257L,  i));
         }
         Random generator = new Random(seed);
         int i = 0;
