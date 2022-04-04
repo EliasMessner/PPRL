@@ -50,6 +50,7 @@ public class Main {
         for(Parameters parameters : parametersList) {
             System.out.printf("Iteration %d/%d\n", i, parametersList.size());
             PrecisionRecallStats stats;
+            // check if random token salting should be done. Random token salting usage example: put r_1000 as token salting value, to do 1000 iterations in random token salting
             if (parameters.tokenSalting().matches("r_[0-9]+")) {
                 List<PrecisionRecallStats> randomTokenSaltingResults = randomTokenSalting(Integer.parseInt(parameters.tokenSalting().split("_")[1]), parameters, dataSet, parallel, String.format("%d/%d", i, parametersList.size()), blockingCheat);
                 randomTokenSaltingResults.forEach(precisionRecallStats -> results.add(new Result(parameters, precisionRecallStats)));
@@ -95,14 +96,16 @@ public class Main {
     private static List<Parameters> createParametersInNestedForLoop() {
         List<Parameters> parametersList = new ArrayList<>();
         LinkingMode[] linkingModes = {LinkingMode.POLYGAMOUS};
-        HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING, HashingMode.RANDOM_HASHING, HashingMode.TRIPLE_HASHING, HashingMode.ENHANCED_DOUBLE_HASHING};
+        HashingMode[] hashingModes = {HashingMode.DOUBLE_HASHING};
         boolean[] bValues = {true};
         boolean[] waValues = {true};
         String[] tsValues = {"r_100"};
         int[] lValues = {1024};
         int[] kValues = {10};
         // double[] tValues = {0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8};
-        double[] tValues = {0.65, 0.7, 0.75, 0.8, 0.85};
+        double[] tValues = {0.75};
+        String[] h1Values = {"SHA-1", "SHA-224", "SHA-256"};
+        String[] h2Values = {"SHA-384", "MD5", "MD2"};
         for (LinkingMode linkingMode : linkingModes) {
             for (HashingMode hashingMode : hashingModes) {
                 for (boolean b : bValues) {
@@ -111,7 +114,11 @@ public class Main {
                             for (int l : lValues) {
                                 for (int k : kValues) {
                                     for (double t : tValues) {
-                                        parametersList.add(new Parameters(linkingMode, hashingMode, b, wa, ts, l, k, t));
+                                        for (String h1 : h1Values) {
+                                            for (String h2 : h2Values) {
+                                                parametersList.add(new Parameters(linkingMode, hashingMode, h1, h2, b, wa, ts, l, k, t));
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -126,6 +133,7 @@ public class Main {
     /**
      * Do many iterations of the mainLoop method, in each iteration the token-salting value will be set to a new random
      * character. Return a list of all results of the iterations.
+     * Random token salting usage example: put r_1000 as token salting value, to do 1000 iterations in random token salting
      * @param iterations # of iterations to be done
      * @param parameters the parameters - the tokenSalting value will be overwritten in each iteration by a random char
      * @param dataSet the data
@@ -139,9 +147,9 @@ public class Main {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         List<PrecisionRecallStats> precisionRecallStatsList = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
-            System.out.printf("RandomTokenSalting - Iteration %d/%d (%s)\n", i, iterations, mainIterationFlag);
+            System.out.printf("RandomTokenSalting - Iteration %d/%d (%s)\n", i+1, iterations, mainIterationFlag);
             char randomToken = alphabet.charAt(random.nextInt(alphabet.length()));
-            Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(),
+            Parameters parametersModified = new Parameters(parameters.linkingMode(), parameters.hashingMode(), parameters.h1(), parameters.h2(),
                     parameters.blocking(), parameters.weightedAttributes(), Character.toString(randomToken), // set the parameter for the token salting to the random value
                     parameters.l(), parameters.k(), parameters.t());
             precisionRecallStatsList.add(mainLoop(parametersModified, dataSet, parallel, blockingCheat));
@@ -159,7 +167,7 @@ public class Main {
         System.out.println("Creating Bloom Filters...");
         Map<Person, BloomFilter> personBloomFilterMap = new ConcurrentHashMap<>();
         Arrays.stream(dataSet).parallel().forEach(person -> {
-            BloomFilter bf = new BloomFilter(parameters.l(), parameters.k(), parameters.hashingMode(), parameters.tokenSalting());
+            BloomFilter bf = new BloomFilter(parameters.l(), parameters.k(), parameters.hashingMode(), parameters.tokenSalting(), parameters.h1(), parameters.h2());
             bf.storePersonData(person, parameters.weightedAttributes());
             personBloomFilterMap.put(person, bf);
             progressHandler.updateProgress();

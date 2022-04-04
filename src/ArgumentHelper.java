@@ -51,7 +51,9 @@ public class ArgumentHelper {
         int l = Integer.parseInt(ArgumentHelper.parseString(args, "l", null));
         int k = Integer.parseInt(ArgumentHelper.parseString(args, "k", "10"));
         double t = Double.parseDouble(ArgumentHelper.parseString(args, "t", null));
-        return new Parameters(linkingMode, hashingMode, blocking, weightedAttributes, tokenSalting, l, k, t);
+        String h1 = ArgumentHelper.parseString(args, "h1", "MD5");
+        String h2 = ArgumentHelper.parseString(args, "h2", "SHA-1");
+        return new Parameters(linkingMode, hashingMode, h1, h2, blocking, weightedAttributes, tokenSalting, l, k, t);
     }
 
     public static String parseString(String[] args, String argName, String defaultValue) {

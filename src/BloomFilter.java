@@ -15,18 +15,22 @@ public class BloomFilter {
     int k; // # of hash functions to be simulated
     HashingMode mode;
     String tokenSalting;
+    String h1;
+    String h2;
 
     /**
      * Constructor for BloomFilter instance. Hash area is initialized with all 0's.
      * @param hashAreaSize The length of the hash area.
      * @param k The number of hash functions to be simulated through double hashing.
      */
-    public BloomFilter(int hashAreaSize, int k, HashingMode mode, String tokenSalting) {
+    public BloomFilter(int hashAreaSize, int k, HashingMode mode, String tokenSalting, String h1, String h2) {
         hashArea = new boolean[hashAreaSize];
         Arrays.fill(hashArea, false);
         this.k = k;
         this.mode = mode;
         this.tokenSalting = tokenSalting;
+        this.h1 = h1;
+        this.h2 = h2;
     }
 
     public BloomFilter() {
@@ -160,8 +164,8 @@ public class BloomFilter {
      * h_i(x) = (h1(x) + i * h2(x) + i^2 * h3(x)) mod m
      */
     private void storeBigramTriple(String bigram, int k) throws NoSuchAlgorithmException {
-        BigInteger h1 = getHash(bigram, "MD5");
-        BigInteger h2 = getHash(bigram, "SHA-1");
+        BigInteger h1 = getHash(bigram, this.h1);
+        BigInteger h2 = getHash(bigram, this.h2);
         BigInteger h3 = getHash(bigram, "MD2");
         int i = 0;
         while (i < k) {
@@ -175,8 +179,8 @@ public class BloomFilter {
     }
 
     private void storeBigramEnhancedDouble(String bigram, int k) throws NoSuchAlgorithmException {
-        BigInteger h1 = getHash(bigram, "MD5");
-        BigInteger h2 = getHash(bigram, "SHA-1");
+        BigInteger h1 = getHash(bigram, this.h1);
+        BigInteger h2 = getHash(bigram, this.h2);
         int i = 0;
         while (i < k) {
             int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
@@ -191,8 +195,8 @@ public class BloomFilter {
      * h_i(x) = (h1(x) + i * h2(x)) mod m
      */
     private void storeBigramDouble(String bigram, int k) throws NoSuchAlgorithmException {
-        BigInteger h1 = getHash(bigram, "MD5");
-        BigInteger h2 = getHash(bigram, "SHA-1");
+        BigInteger h1 = getHash(bigram, this.h1);
+        BigInteger h2 = getHash(bigram, this.h2);
         int i = 0;
         while (i < k) {
             int hashValue = h1.mod(BigInteger.valueOf(hashArea.length)).intValue();
@@ -210,7 +214,6 @@ public class BloomFilter {
      * @throws NoSuchAlgorithmException If the specified hash-algorithm is unknown.
      */
     private BigInteger getHash(String key, String algorithm) throws NoSuchAlgorithmException {
-        // TODO use keyed hashing?
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         digest.reset();
         digest.update(key.getBytes(StandardCharsets.UTF_8));

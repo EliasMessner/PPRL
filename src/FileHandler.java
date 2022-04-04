@@ -76,9 +76,11 @@ public class FileHandler {
         return new Parameters(
                 LinkingMode.parseFromString(args[attributeIndices.get("linkingMode")]),
                 HashingMode.parseFromString(args[attributeIndices.get("hashingMode")]),
+                args[attributeIndices.get("h1")],
+                args[attributeIndices.get("h2")],
                 Boolean.parseBoolean(args[attributeIndices.get("b")]),
                 Boolean.parseBoolean(args[attributeIndices.get("wa")]),
-                args[attributeIndices.get("sp")],
+                args[attributeIndices.get("ts")],
                 Integer.parseInt(args[attributeIndices.get("l")]),
                 Integer.parseInt(args[attributeIndices.get("k")]),
                 Double.parseDouble(args[attributeIndices.get("t")]));
