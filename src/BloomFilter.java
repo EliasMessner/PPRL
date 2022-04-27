@@ -60,7 +60,6 @@ public class BloomFilter {
      * @param attrValue attribute value as string.
      */
     public void store(String attrValue, int k) throws NoSuchAlgorithmException {
-        // TODO standardize string: remove non-alphanumerics, make all uppercase
         List<String> bigrams = getBigrams(attrValue);
         for (String bigram : bigrams) {
             storeBigram(bigram, k);
@@ -161,7 +160,7 @@ public class BloomFilter {
     }
 
     /**
-     * h_i(x) = (h1(x) + i * h2(x) + i^2 * h3(x)) mod m
+     * h_i(x) = (h1(x) + i * h2(x) + i^2 * h3(x)) mod l
      */
     private void storeBigramTriple(String bigram, int k) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, this.h1);
@@ -192,7 +191,7 @@ public class BloomFilter {
     }
 
     /**
-     * h_i(x) = (h1(x) + i * h2(x)) mod m
+     * h_i(x) = (h1(x) + i * h2(x)) mod l
      */
     private void storeBigramDouble(String bigram, int k) throws NoSuchAlgorithmException {
         BigInteger h1 = getHash(bigram, this.h1);
