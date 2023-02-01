@@ -1,1 +1,0 @@
-java -cp classes Main t=0.7 l=1000 k=10 mode=ED
