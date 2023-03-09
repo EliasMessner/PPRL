@@ -1,19 +1,20 @@
 package RLInterface;
 
 import PPRL.*;
-import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import com.opencsv.exceptions.CsvValidationException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
+
+import static PPRL.Util.getDatasetFromFile;
 
 public class PPRLAdapter implements RecordLinkageI {
     
@@ -59,19 +60,6 @@ public class PPRLAdapter implements RecordLinkageI {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Person[] getDatasetFromFile(String filePath) {
-        List<Person> records = new ArrayList<>();
-        try (CSVReader csvReader = new CSVReader(new FileReader(filePath))) {
-            String[] values;
-            while ((values = csvReader.readNext()) != null) {
-                records.add(new Person(values));
-            }
-        } catch (IOException | CsvValidationException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-        return records.toArray(Person[]::new);
     }
 
     private MatcherParams getMatcherParams(String configFile) throws IOException, ParseException {
